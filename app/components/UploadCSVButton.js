@@ -2,7 +2,7 @@
 import React from 'react';
 
 const UploadCSVButton = () => {
-  const handleFileUpload = (e) => {
+  const handleFileUpload = () => {
     // Handle file upload logic
   };
 

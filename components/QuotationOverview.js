@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 
 const QuotationOverview = () => {
   // Sample quotation data
-  const [quotations, setQuotations] = useState([
+  const [quotations] = useState([
     {
       id: "QT-2024-001",
       customerName: "Tech Solutions Inc.",

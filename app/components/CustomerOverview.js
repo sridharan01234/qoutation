@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 
 const CustomerOverview = () => {
   // Sample customer data
-  const [customers, setCustomers] = useState([
+  const [customers] = useState([
     {
       id: 1,
       name: "John Doe",
