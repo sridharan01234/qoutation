@@ -1,6 +1,5 @@
 // components/ProductOverview.js
 import { React, useState, useEffect } from 'react';
-import ProductListTable from '../components/ProductListTable';
 import ProductForm from './ProductForm';
 
 
@@ -21,7 +20,7 @@ const ProductOverview = () => {
   };
 
   // Sample local products data
-  const [products, setProducts] = useState([
+  const [products] = useState([
     {
       id: 1,
       name: "Premium Coffee",
@@ -77,20 +76,6 @@ const ProductOverview = () => {
 
     return () => clearTimeout(timer);
   }, []);
-
-  // Handle add product
-  const handleAddProduct = () => {
-    const newProduct = {
-      id: products.length + 1,
-      name: "New Product",
-      category: "Category",
-      price: 0.00,
-      stock: 0,
-      status: "In Stock",
-      lastUpdated: new Date().toISOString().split('T')[0]
-    };
-    setProducts([...products, newProduct]);
-  };
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
