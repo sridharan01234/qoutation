@@ -1,4 +1,3 @@
-// components/CartDropdown.js
 "use client"
 import { useState } from 'react';
 import { useCart } from '../context/CartContext';
@@ -87,12 +86,13 @@ const CartDropdown = () => {
                     <span className="font-medium">Total:</span>
                     <span className="font-medium">${totalPrice.toFixed(2)}</span>
                   </div>
-                  <button
-                    onClick={() => {/* Implement checkout */}}
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-200"
-                  >
-                    Checkout
-                  </button>
+<button
+  onClick={() => window.location.href = '/checkout'}
+  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-200"
+>
+  Checkout
+</button>
+
                 </div>
               </>
             )}

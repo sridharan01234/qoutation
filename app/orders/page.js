@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 
 const OrderTracking = () => {
-  const [orders, setOrders] = useState([
+  const [orders] = useState([
     {
       id: 'ORD-001',
       customerName: 'John Doe',
