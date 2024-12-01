@@ -1,6 +1,6 @@
-"use client"
-import React from 'react';
-import AdminDashboard from '../components/AdminDashboard';
+"use client";
+import React from "react";
+import AdminDashboard from "../components/AdminDashboard";
 
 const Dashboard = () => {
   return (
@@ -10,12 +10,14 @@ const Dashboard = () => {
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between max-w-[2000px] mx-auto">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Admin Dashboard
+              </h1>
               <p className="mt-1 text-sm text-gray-500">
                 Manage your products, orders, and customers
               </p>
             </div>
-            
+
             {/* Admin Profile/Quick Actions */}
             <div className="flex items-center space-x-4">
               <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200">
@@ -23,13 +25,13 @@ const Dashboard = () => {
               </button>
               <div className="flex items-center space-x-3">
                 <span className="relative">
-                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-green-400 ring-2 ring-white"/>
+                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-green-400 ring-2 ring-white" />
                   <img
                     className="h-10 w-10 rounded-full"
                     src="/admin-avatar.png"
                     alt="Admin"
                     onError={(e) => {
-                      e.target.src = "https://via.placeholder.com/40"
+                      e.target.src = "https://via.placeholder.com/40";
                     }}
                   />
                 </span>
@@ -41,7 +43,7 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="w-full h-full grid grid-cols-1">
-      <div className="bg-white rounded-lg shadow">
+        <div className="bg-white rounded-lg shadow">
           <div className="p-6">
             {/* Breadcrumb */}
             <nav className="flex mb-6" aria-label="Breadcrumb">
@@ -53,8 +55,16 @@ const Dashboard = () => {
                 </li>
                 <li>
                   <div className="flex items-center">
-                    <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    <svg
+                      className="w-6 h-6 text-gray-400"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     <span className="text-gray-500">Dashboard</span>
                   </div>

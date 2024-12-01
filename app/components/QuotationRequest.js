@@ -1,4 +1,4 @@
-// components/QuotationRequest.js
+"use client"
 import React, { useState } from 'react';
 
 const QuotationRequest = () => {
