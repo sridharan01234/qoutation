@@ -27,10 +27,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Protect admin routes
-  if (pathname.startsWith('/admin') && token.role !== 'ADMIN') {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
+  // // Protect admin routes
+  // if (pathname.startsWith('/admin') && token.role !== 'ADMIN') {
+  //   return NextResponse.redirect(new URL('/dashboard', request.url))
+  // }
 
   // Protect manager routes
   if (pathname.startsWith('/manager') && !['ADMIN', 'MANAGER'].includes(token.role)) {

@@ -1,6 +1,7 @@
 // prisma/seed.ts
 const { PrismaClient } = require('@prisma/client')
 const { faker } = require('@faker-js/faker')
+const bcrypt = require('bcryptjs')
 
 const prisma = new PrismaClient()
 
@@ -18,9 +19,34 @@ const baseCategories = [
   'Produce'
 ]
 
+// Admin user configuration
+const adminUser = {
+  email: 'admin@example.com',
+  password: 'Admin@123', // You should change this in production
+  role: 'ADMIN'
+}
 async function main() {
-  console.log('Start seeding categories...')
-  
+  console.log('Start seeding...')
+
+  // Create admin user
+  try {
+    const hashedPassword = await bcrypt.hash(adminUser.password, 10)
+    
+    const admin = await prisma.user.upsert({
+      where: { email: adminUser.email },
+      update: {},
+      create: {
+        email: adminUser.email,
+        password: hashedPassword,
+        role: adminUser.role,
+      }
+    })
+    
+    console.log(`Created/Updated admin user: ${admin.email}`)
+  } catch (error) {
+    console.error('Error creating admin user:', error)
+  }
+
   // Create categories with error handling
   for (const categoryName of baseCategories) {
     try {
