@@ -7,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Authentication Models
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -21,10 +20,10 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId], map: "Account_userId_fkey")
 }
 
 model Session {
@@ -33,6 +32,8 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "Session_userId_fkey")
 }
 
 model User {
@@ -43,13 +44,13 @@ model User {
   password      String
   image         String?
   role          Role        @default(USER)
-  accounts      Account[]
-  sessions      Session[]
   isActive      Boolean     @default(true)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
-  quotations    Quotation[] // Added relation to quotations
-  customer      Customer?   // Added relation to customer
+  accounts      Account[]
+  customer      Customer?
+  quotations    Quotation[]
+  sessions      Session[]
 }
 
 model VerificationToken {
@@ -60,7 +61,163 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// Enums
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
+model Product {
+  id             String          @id @default(cuid())
+  name           String
+  description    String?         @db.Text
+  categoryId     String
+  price          Float
+  stock          Int
+  sku            String          @unique
+  image          String?         @db.Text
+  status         ProductStatus   @default(IN_STOCK)
+  featured       Boolean         @default(false)
+  weight         Float?
+  dimensions     Json?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  category       Category        @relation(fields: [categoryId], references: [id])
+  quotationItems QuotationItem[]
+  tags           ProductTag[]    @relation("ProductToProductTag")
+
+  @@index([categoryId])
+  @@index([status])
+  @@index([sku])
+}
+
+model ProductTag {
+  id       String    @id @default(cuid())
+  name     String
+  products Product[] @relation("ProductToProductTag")
+}
+
+model Customer {
+  id         String      @id @default(cuid())
+  userId     String?     @unique
+  name       String
+  company    String?
+  email      String
+  phone      String?
+  taxId      String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  notes      String?     @db.Text
+  isActive   Boolean     @default(true)
+  address    Address?
+  user       User?       @relation(fields: [userId], references: [id])
+  quotations Quotation[]
+}
+
+model Address {
+  id         String   @id @default(cuid())
+  customerId String   @unique
+  street     String
+  city       String
+  state      String?
+  postalCode String?
+  country    String
+  isDefault  Boolean  @default(true)
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model Quotation {
+  id              String          @id @default(cuid())
+  quotationNumber String          @unique
+  customerId      String
+  userId          String
+  date            DateTime        @default(now())
+  validUntil      DateTime
+  status          QuotationStatus @default(DRAFT)
+  subtotal        Float
+  taxRate         Float           @default(0)
+  taxAmount       Float           @default(0)
+  discount        Float           @default(0)
+  discountType    String?
+  shippingCost    Float           @default(0)
+  totalAmount     Float
+  notes           String?         @db.Text
+  terms           String?         @db.Text
+  paymentTerms    PaymentTerms    @default(IMMEDIATE)
+  currency        String          @default("USD")
+  revisionNumber  Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  activities      Activity[]
+  attachments     Attachment[]
+  customer        Customer        @relation(fields: [customerId], references: [id])
+  user            User            @relation(fields: [userId], references: [id])
+  items           QuotationItem[]
+
+  @@index([quotationNumber])
+  @@index([customerId])
+  @@index([userId])
+  @@index([status])
+}
+
+model QuotationItem {
+  id          String    @id @default(cuid())
+  quotationId String
+  productId   String
+  quantity    Int
+  unitPrice   Float
+  discount    Float     @default(0)
+  tax         Float     @default(0)
+  total       Float
+  notes       String?   @db.Text
+  product     Product   @relation(fields: [productId], references: [id])
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId])
+  @@index([productId])
+}
+
+model Attachment {
+  id          String    @id @default(cuid())
+  quotationId String
+  filename    String
+  fileUrl     String    @db.Text
+  fileType    String
+  fileSize    Int
+  uploadedAt  DateTime  @default(now())
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId])
+}
+
+model Activity {
+  id          String    @id @default(cuid())
+  quotationId String
+  userId      String
+  type        String
+  description String    @db.Text
+  createdAt   DateTime  @default(now())
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId])
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([read])
+}
+
 enum Role {
   ADMIN
   MANAGER
@@ -91,165 +248,4 @@ enum PaymentTerms {
   NET_45
   NET_60
   CUSTOM
-}
-
-// Product Management Models
-model Category {
-  id        String    @id @default(cuid())
-  name      String    @unique
-  products  Product[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-}
-
-model Product {
-  id            String          @id @default(cuid())
-  name          String
-  description   String?         @db.Text
-  category      Category        @relation(fields: [categoryId], references: [id])
-  categoryId    String
-  price         Float
-  stock         Int
-  sku           String          @unique
-  image         String?         @db.Text
-  status        ProductStatus   @default(IN_STOCK)
-  featured      Boolean         @default(false)
-  weight        Float?          // in kg
-  dimensions    Json?           // { length, width, height }
-  tags          ProductTag[]
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  quotationItems QuotationItem[] // Added relation to quotation items
-
-  @@index([categoryId])
-  @@index([status])
-  @@index([sku])
-}
-
-model ProductTag {
-  id       String    @id @default(cuid())
-  name     String
-  products Product[]
-}
-
-// Quotation Management Models
-model Customer {
-  id          String      @id @default(cuid())
-  userId      String?     @unique // Link to User if they have an account
-  user        User?       @relation(fields: [userId], references: [id])
-  name        String
-  company     String?
-  email       String
-  phone       String?
-  address     Address?
-  taxId       String?
-  quotations  Quotation[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  notes       String?     @db.Text
-  isActive    Boolean     @default(true)
-}
-
-model Address {
-  id          String    @id @default(cuid())
-  customerId  String    @unique
-  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  street      String
-  city        String
-  state       String?
-  postalCode  String?
-  country     String
-  isDefault   Boolean   @default(true)
-}
-
-model Quotation {
-  id              String           @id @default(cuid())
-  quotationNumber String          @unique // QT-2024-001
-  customerId      String
-  customer        Customer        @relation(fields: [customerId], references: [id])
-  userId          String          // Sales person or creator
-  user            User            @relation(fields: [userId], references: [id])
-  date            DateTime        @default(now())
-  validUntil      DateTime
-  status          QuotationStatus @default(DRAFT)
-  items           QuotationItem[]
-  subtotal        Float
-  taxRate         Float           @default(0)
-  taxAmount       Float           @default(0)
-  discount        Float           @default(0)
-  discountType    String?         // percentage or fixed
-  shippingCost    Float           @default(0)
-  totalAmount     Float
-  notes           String?         @db.Text
-  terms           String?         @db.Text
-  paymentTerms    PaymentTerms    @default(IMMEDIATE)
-  currency        String          @default("USD")
-  revisionNumber  Int             @default(0)
-  attachments     Attachment[]
-  activities      Activity[]
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-
-  @@index([quotationNumber])
-  @@index([customerId])
-  @@index([userId])
-  @@index([status])
-}
-
-model QuotationItem {
-  id          String    @id @default(cuid())
-  quotationId String
-  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
-  productId   String
-  product     Product   @relation(fields: [productId], references: [id])
-  quantity    Int
-  unitPrice   Float
-  discount    Float     @default(0)
-  tax         Float     @default(0)
-  total       Float
-  notes       String?   @db.Text
-
-  @@index([quotationId])
-  @@index([productId])
-}
-
-model Attachment {
-  id          String    @id @default(cuid())
-  quotationId String
-  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
-  filename    String
-  fileUrl     String    @db.Text
-  fileType    String
-  fileSize    Int
-  uploadedAt  DateTime  @default(now())
-
-  @@index([quotationId])
-}
-
-model Activity {
-  id          String    @id @default(cuid())
-  quotationId String
-  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
-  userId      String
-  type        String    // CREATED, UPDATED, STATUS_CHANGED, etc.
-  description String    @db.Text
-  createdAt   DateTime  @default(now())
-
-  @@index([quotationId])
-  @@index([userId])
-}
-
-// prisma/schema.prisma
-
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  title     String
-  message   String
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([read])
 }

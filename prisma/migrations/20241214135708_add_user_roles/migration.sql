@@ -1,5 +1,0 @@
--- AlterTable
-ALTER TABLE `user` ADD COLUMN `isActive` BOOLEAN NOT NULL DEFAULT true,
-    ADD COLUMN `lastLogin` DATETIME(3) NULL,
-    ADD COLUMN `role` ENUM('ADMIN', 'MANAGER', 'USER') NOT NULL DEFAULT 'USER',
-    MODIFY `image` TEXT NULL;
