@@ -8,7 +8,6 @@ interface Product {
   name: string
   price: number
   image?: string
-  // Add other product properties as needed
 }
 
 interface CartItem extends Product {
@@ -28,11 +27,14 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // Load cart from localStorage on mount and when user changes
   useEffect(() => {
+    if (status === 'loading') return
+
     const loadCart = () => {
       if (typeof window === 'undefined') return
 
@@ -48,19 +50,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           setCartItems([])
         }
       }
+      setIsInitialized(true)
     }
 
     loadCart()
-  }, [session?.user?.id])
+  }, [session?.user?.id, status])
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
+    if (!isInitialized) return
     if (typeof window === 'undefined') return
 
     const userId = session?.user?.id
     const storageKey = userId ? `cart_${userId}` : 'cart_guest'
     localStorage.setItem(storageKey, JSON.stringify(cartItems))
-  }, [cartItems, session?.user?.id])
+  }, [cartItems, session?.user?.id, isInitialized])
 
   const addToCart = (product: Product) => {
     setCartItems(prevItems => {
@@ -86,7 +90,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         item.id === productId
           ? { ...item, quantity: Math.max(0, quantity) }
           : item
-      ).filter(item => item.quantity > 0) // Remove items with quantity 0
+      ).filter(item => item.quantity > 0)
     )
   }
 
@@ -94,7 +98,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setCartItems([])
   }
 
-  // Calculate cart totals
   const cartTotal = cartItems.reduce(
     (total, item) => total + item.price * item.quantity,
     0
@@ -115,6 +118,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     itemCount,
   }
 
+  // Don't render until we've initialized the cart
+  if (!isInitialized && status === 'loading') {
+    return null
+  }
+
   return (
     <CartContext.Provider value={value}>
       {children}
@@ -128,16 +136,4 @@ export function useCart() {
     throw new Error('useCart must be used within a CartProvider')
   }
   return context
-}
-
-// Optional: Export a hook that combines cart and auth
-export function useAuthenticatedCart() {
-  const { data: session } = useSession()
-  const cart = useCart()
-
-  return {
-    ...cart,
-    isAuthenticated: !!session,
-    user: session?.user,
-  }
 }
