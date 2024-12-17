@@ -24,9 +24,7 @@ const ProductOverview = () => {
       if (!response.ok) throw new Error('Failed to fetch products')
       const result = await response.json()
       setProducts(result.data || [])
-      setError(null)
     } catch (err) {
-      setError(err.message)
       console.error('Error fetching products:', err)
     } finally {
       setIsLoading(false)
