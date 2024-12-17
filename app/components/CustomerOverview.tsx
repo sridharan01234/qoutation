@@ -3,20 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import UserModal from './UserModal'
-import { Role } from '@prisma/client'
 import React from 'react';
-
-interface User {
-  id: string
-  name?: string
-  email: string
-  emailVerified?: Date
-  image?: string
-  role: Role
-  isActive: boolean
-  createdAt: Date
-  updatedAt: Date
-}
 
 // Helper functions
 const getRoleBadgeColor = (role: string): string => {
@@ -33,74 +20,6 @@ const getRoleBadgeColor = (role: string): string => {
       return 'bg-yellow-100 text-yellow-800'
     default:
       return 'bg-gray-100 text-gray-800'
-  }
-}
-
-
-const formatDate = (date: string) => {
-  if (!date) return '-'
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
-
-// Helper components
-const DetailField = ({ label, value }: { label: string; value: string }) => (
-  <div>
-    <dt className="text-sm font-medium text-gray-500">{label}</dt>
-    <dd className="mt-1 text-sm text-gray-900">{value || '-'}</dd>
-  </div>
-)
-
-const renderColumnContent = (user: any, columnId: string) => {
-  switch (columnId) {
-    case 'name':
-      return (
-        <div className="flex items-center">
-          <div className="h-10 w-10 flex-shrink-0">
-            {user.image ? (
-              <img
-                className="h-10 w-10 rounded-full"
-                src={user.image}
-                alt={user.name}
-              />
-            ) : (
-              <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                <span className="text-gray-500 font-medium">
-                  {user.name?.[0] || 'U'}
-                </span>
-              </div>
-            )}
-          </div>
-          <div className="ml-4">
-            <div className="text-sm font-medium text-gray-900">{user.name}</div>
-          </div>
-        </div>
-      )
-    case 'role':
-      return (
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(user.role)}`}>
-          {user.role}
-        </span>
-      )
-    case 'status':
-      return (
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-          user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
-          {user.isActive ? 'Active' : 'Inactive'}
-        </span>
-      )
-    case 'lastLogin':
-      return formatDate(user.lastLogin)
-    case 'createdAt':
-      return formatDate(user.createdAt)
-    case 'updatedAt':
-      return formatDate(user.updatedAt)
-    default:
-      return user[columnId] || '-'
   }
 }
 

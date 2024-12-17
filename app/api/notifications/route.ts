@@ -1,7 +1,8 @@
 // app/api/notifications/route.ts
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../../../lib/auth'
 import { prisma } from '@/lib/prisma';
 
 // Define the connections map if not already defined
@@ -11,7 +12,7 @@ export async function GET(request: Request) {
   try {
     const headersList = await headers();
     const accept = headersList.get('accept');
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions)
     
     // Early return if not authenticated
     if (!session?.user?.email) {
@@ -45,6 +46,7 @@ export async function GET(request: Request) {
           try {
             await writer.write(encoder.encode('data: {"type":"heartbeat"}\n\n'));
           } catch (error) {
+            console.log(error)
             clearInterval(heartbeatInterval);
             connections.delete(userId);
             writer.close().catch(console.error);

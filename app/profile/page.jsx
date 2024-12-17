@@ -4,14 +4,13 @@
 import { useSession } from "next-auth/react";
 import { useState, useRef } from "react";
 import { default as NextImage } from 'next/image'
-import { updateProfile, updatePassword, uploadAvatar } from "@/utils/api";
+import { uploadAvatar } from "@/utils/api";
 
 
 export default function ProfileSettings() {
     const { data: session, update: updateSession } = useSession()
     const [activeTab, setActiveTab] = useState('personal')
     const [loading, setLoading] = useState(false)
-    const [toast, setToast] = useState(null)
     const fileInputRef = useRef(null)
   
     const [formData, setFormData] = useState({
@@ -34,10 +33,6 @@ export default function ProfileSettings() {
       }))
     }
   
-    const handleAvatarClick = () => {
-      fileInputRef.current?.click()
-    }
-  
     const handleAvatarChange = async (e) => {
       const file = e.target.files?.[0]
       if (!file) return
@@ -46,57 +41,8 @@ export default function ProfileSettings() {
         setLoading(true)
         const result = await uploadAvatar(file)
         await updateSession({ image: result.imageUrl })
-        setToast({ message: 'Avatar updated successfully', type: 'success' })
       } catch (error) {
-        setToast({ message: error.message, type: 'error' })
-      } finally {
-        setLoading(false)
-      }
-    }
-  
-    const handlePersonalSubmit = async (e) => {
-      e.preventDefault()
-      setLoading(true)
-      try {
-        await updateProfile({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          company: formData.company,
-          emailNotifications: formData.emailNotifications,
-          marketingEmails: formData.marketingEmails,
-        })
-        await updateSession()
-        setToast({ message: 'Profile updated successfully', type: 'success' })
-      } catch (error) {
-        setToast({ message: error.message, type: 'error' })
-      } finally {
-        setLoading(false)
-      }
-    }
-  
-    const handlePasswordSubmit = async (e) => {
-      e.preventDefault()
-      if (formData.newPassword !== formData.confirmPassword) {
-        setToast({ message: 'Passwords do not match', type: 'error' })
-        return
-      }
-  
-      setLoading(true)
-      try {
-        await updatePassword({
-          currentPassword: formData.currentPassword,
-          newPassword: formData.newPassword,
-        })
-        setFormData(prev => ({
-          ...prev,
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: '',
-        }))
-        setToast({ message: 'Password updated successfully', type: 'success' })
-      } catch (error) {
-        setToast({ message: error.message, type: 'error' })
+        console.error("Error uploading avatar:", error)
       } finally {
         setLoading(false)
       }
@@ -118,13 +64,6 @@ export default function ProfileSettings() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-              {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white shadow rounded-lg">
           {/* Header */}

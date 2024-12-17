@@ -10,11 +10,10 @@ const ProductOverview = () => {
   const [products, setProducts] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState(null)
-  const [error, setError] = useState(null)
   
   // Sorting and filtering states
-  const [sortField, setSortField] = useState('name')
-  const [sortDirection, setSortDirection] = useState('asc')
+  const [sortField] = useState('name')
+  const [sortDirection] = useState('asc')
   const [searchTerm, setSearchTerm] = useState('')
   const [filterCategory, setFilterCategory] = useState('all')
 

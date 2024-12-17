@@ -1,6 +1,6 @@
 // components/ProductModal.tsx
 import { useState, useEffect } from 'react';
-import { Product, Category, ProductTag, ProductStatus, ProductFormData } from '@/types';
+import { Product, Category, ProductStatus, ProductFormData } from '@/types';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface ProductModalProps {

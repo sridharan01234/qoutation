@@ -104,14 +104,6 @@ export async function GET(request: Request) {
   }
 }
 
-// Add enum for QuotationStatus if not already defined
-enum QuotationStatus {
-  DRAFT = 'DRAFT',
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED'
-}
-
 
 // POST create new quotation
 export async function POST(request: Request) {

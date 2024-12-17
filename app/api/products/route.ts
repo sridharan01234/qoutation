@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const status = searchParams.get('status')
     const featured = searchParams.get('featured')
 
-    let whereClause: any = {}
+    const whereClause: any = {}
 
     if (category) {
       whereClause.categoryId = category

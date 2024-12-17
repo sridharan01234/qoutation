@@ -1,13 +1,11 @@
 // components/UserMenu.tsx
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { signOut, useSession } from 'next-auth/react'
 import Image from 'next/image'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-toastify'
-import { NotificationService } from '../../utils/notificationService';
 
 interface Notification {
   id: string;

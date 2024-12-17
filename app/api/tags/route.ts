@@ -7,6 +7,7 @@ export async function GET() {
     const tags = await prisma.productTag.findMany();
     return NextResponse.json(tags);
   } catch (error) {
+    console.log(error)
     return NextResponse.json(
       { error: 'Failed to fetch tags' },
       { status: 500 }
