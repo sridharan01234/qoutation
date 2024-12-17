@@ -22,10 +22,6 @@ interface Quotation {
   }>;
   status: string;
   createdAt: string;
-  assignedTo: {
-    name: string;
-    email: string;
-  };
   attachments: any[];
   activities: any[];
 }
@@ -193,7 +189,6 @@ const QuotationOverview: React.FC = () => {
                 { key: 'customer.name', label: 'Customer' },
                 { key: 'createdAt', label: 'Date' },
                 { key: 'status', label: 'Status' },
-                { key: 'assignedTo.name', label: 'Assigned To' }
               ].map((column) => (
                 <th
                   key={column.key}
@@ -234,9 +229,6 @@ const QuotationOverview: React.FC = () => {
                   <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(quotation.status)}`}>
                     {quotation.status}
                   </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {quotation.assignedTo.name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
