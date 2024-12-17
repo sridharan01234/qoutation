@@ -1,7 +1,7 @@
 
 // app/api/quotations/[id]/route.ts
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma'
+import { prisma } from '../../../../lib/prisma'
 
 // GET single quotation
 export async function GET(
