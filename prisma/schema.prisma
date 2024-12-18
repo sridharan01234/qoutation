@@ -36,21 +36,65 @@ model Session {
   @@index([userId], map: "Session_userId_fkey")
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 model User {
-  id            String      @id @default(cuid())
-  name          String?
-  email         String      @unique
-  emailVerified DateTime?
-  password      String
-  image         String?
-  role          Role        @default(USER)
-  isActive      Boolean     @default(true)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  accounts      Account[]
-  customer      Customer?
-  quotations    Quotation[]
-  sessions      Session[]
+  id              String      @id @default(cuid())
+  name            String?
+  email           String      @unique
+  emailVerified   DateTime?
+  password        String
+  image           String?
+  role            Role        @default(USER)
+  isActive        Boolean     @default(true)
+  
+  // Personal Information
+  firstName       String?
+  lastName        String?
+  displayName     String?
+  gender          Gender?
+  dateOfBirth     DateTime?
+  phoneNumber     String?
+  
+  // Address Information
+  address         String?
+  city           String?
+  state          String?
+  country        String?
+  postalCode     String?
+  
+  // Business Information
+  company        String?
+  jobTitle       String?
+  department     String?
+  
+  // Preferences
+  language       String?     @default("en")
+  timezone       String?     @default("UTC")
+  currency       String?     @default("USD")
+  
+  // Communication Preferences
+  emailNotifications Boolean @default(true)
+  smsNotifications   Boolean @default(false)
+  
+  // Social Media
+  linkedinUrl    String?
+  twitterUrl     String?
+  websiteUrl     String?
+  
+  // System Fields
+  lastLoginAt    DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  
+  // Relations
+  accounts       Account[]
+  quotations     Quotation[]
+  sessions       Session[]
 }
 
 model VerificationToken {
@@ -99,39 +143,9 @@ model ProductTag {
   products Product[] @relation("ProductToProductTag")
 }
 
-model Customer {
-  id         String      @id @default(cuid())
-  userId     String?     @unique
-  name       String
-  company    String?
-  email      String
-  phone      String?
-  taxId      String?
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  notes      String?     @db.Text
-  isActive   Boolean     @default(true)
-  address    Address?
-  user       User?       @relation(fields: [userId], references: [id])
-  quotations Quotation[]
-}
-
-model Address {
-  id         String   @id @default(cuid())
-  customerId String   @unique
-  street     String
-  city       String
-  state      String?
-  postalCode String?
-  country    String
-  isDefault  Boolean  @default(true)
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-}
-
 model Quotation {
   id              String          @id @default(cuid())
   quotationNumber String          @unique
-  customerId      String
   userId          String
   date            DateTime        @default(now())
   validUntil      DateTime
@@ -152,15 +166,16 @@ model Quotation {
   updatedAt       DateTime        @updatedAt
   activities      Activity[]
   attachments     Attachment[]
-  customer        Customer        @relation(fields: [customerId], references: [id])
   user            User            @relation(fields: [userId], references: [id])
   items           QuotationItem[]
 
   @@index([quotationNumber])
-  @@index([customerId])
   @@index([userId])
   @@index([status])
+  @@index([createdAt])
+  @@index([date])
 }
+
 
 model QuotationItem {
   id          String    @id @default(cuid())

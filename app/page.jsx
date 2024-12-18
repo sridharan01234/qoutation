@@ -1,29 +1,14 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import ProductGrid from "./components/ProductGrid";
-import ProductDetails from "./components/ProductDetails";
 import { fetchProducts } from "./services/api";
-import CartDropdown from "./components/CartDropdown";
+import "react-responsive-carousel/lib/styles/carousel.min.css";
+import FeaturedProducts from "./components/FeaturedProducts";
 
 const Home = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedProduct, setSelectedProduct] = useState(null);
 
-  const handleAddToCart = (product) => {
-    // Implement add to cart logic
-    console.log("Adding to cart:", product);
-  };
-
-  const handleToggleFavorite = (product) => {
-    // Implement favorite toggle logic
-    console.log("Toggle favorite:", product);
-  };
-
-  // Fetch products when component mounts
   useEffect(() => {
     const getProducts = async () => {
       try {
@@ -40,33 +25,6 @@ const Home = () => {
 
     getProducts();
   }, []);
-
-  const filteredProducts = products
-    .filter(
-      (product) =>
-        product.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .filter(
-      (product) =>
-        selectedCategory === "all" || product.category === selectedCategory
-    );
-
-  // Get unique categories from products
-  const categories = [
-    "all",
-    ...new Set(products.map((product) => product.category)),
-  ];
-
-  // Handler for viewing product details
-  const handleProductClick = (product) => {
-    setSelectedProduct(product);
-  };
-
-  // Handler for going back to product list
-  const handleBackToProducts = () => {
-    setSelectedProduct(null);
-  };
 
   if (loading) {
     return (
@@ -89,111 +47,36 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white shadow-sm w-full">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Product Catalog
-            </h1>
-
-            <div className="flex items-center gap-6">
-              {!selectedProduct && (
-                <>
-                  {/* Search Bar */}
-                  <div className="relative flex-1 max-w-md">
-                    <input
-                      type="text"
-                      placeholder="Search products..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                    <div className="absolute left-3 top-2.5">
-                      <svg
-                        className="h-5 w-5 text-gray-400"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-
-                  {/* Category Filter */}
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="block w-auto px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    {categories.map((category) => (
-                      <option key={category} value={category}>
-                        {category.charAt(0).toUpperCase() + category.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </>
-              )}
-
-              {/* Cart Dropdown */}
-              <CartDropdown />
+      {/* Hero Section */}
+      <section className="relative bg-gray-900 text-white">
+        <div className="relative h-[600px] w-full overflow-hidden">
+          <div className="absolute inset-0">
+            <img
+              src="/hero-image.jpg" // Replace with your hero image
+              alt="Hero Background"
+              className="w-full h-full object-cover opacity-50"
+            />
+          </div>
+          <div className="absolute inset-0 bg-black bg-opacity-40" />
+          <div className="relative h-full flex items-center justify-center">
+            <div className="text-center px-4 sm:px-6 lg:px-8">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6">
+                Welcome to Our Store
+              </h1>
+              <p className="text-xl sm:text-2xl mb-8">
+                Discover our amazing collection of products
+              </p>
+              <button className="bg-white text-gray-900 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                Shop Now
+              </button>
             </div>
           </div>
         </div>
-      </header>
+      </section>
 
-      {/* Main Content */}
-      <main className="w-full h-full">
-        {selectedProduct ? (
-          <ProductDetails
-            product={selectedProduct}
-            onBack={handleBackToProducts}
-          />
-        ) : (
-          <>
-            {filteredProducts.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-500">
-                  No products found matching your criteria
-                </p>
-              </div>
-            ) : (
-              <div>
-                <div className="bg-white border-b">
-                  <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
-                    <p className="text-sm text-gray-500">
-                      Showing {filteredProducts.length}{" "}
-                      {filteredProducts.length === 1 ? "product" : "products"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-                  <ProductGrid
-                    products={filteredProducts} // Now passing the filtered products
-                    onProductClick={handleProductClick}
-                    onAddToCart={handleAddToCart}
-                    onToggleFavorite={handleToggleFavorite}
-                  />
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
-          <p className="text-center text-sm text-gray-500">
-            © {new Date().getFullYear()} Your Company Name. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      {/* Featured Products Carousel */}
+     
+      <FeaturedProducts products={products} />
     </div>
   );
 };

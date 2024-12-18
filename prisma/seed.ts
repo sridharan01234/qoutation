@@ -1,255 +1,286 @@
 // prisma/seed.ts
-import { PrismaClient, User, Customer, Product, Prisma } from '@prisma/client'
-import { hash } from 'bcryptjs'
-import { faker } from '@faker-js/faker'
+import {
+  PrismaClient,
+  Role,
+  ProductStatus,
+  QuotationStatus,
+  PaymentTerms,
+  Product,
+} from "@prisma/client";
+import { hash } from "bcrypt";
+import { faker } from "@faker-js/faker";
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
-// Base categories
-const baseCategories = [
-  'Beverages',
-  'Snacks',
-  'Dairy',
-  'Bakery',
-  'Canned Goods',
-  'Condiments',
-  'Frozen Foods',
-  'Grains & Pasta',
-  'Meat & Poultry',
-  'Produce'
-]
+const TOTAL_USERS = 10;
+const TOTAL_CATEGORIES = 5;
+const TOTAL_PRODUCTS = 20;
+const TOTAL_TAGS = 8;
+const TOTAL_QUOTATIONS = 50;
+const MAX_ITEMS_PER_QUOTATION = 5;
 
-// Product tags
-const productTags = ['New', 'Featured', 'Best Seller', 'Sale', 'Organic']
+const ACTIVITY_TYPES = [
+  "CREATED",
+  "UPDATED",
+  "STATUS_CHANGED",
+  "COMMENT_ADDED",
+  "ATTACHMENT_ADDED",
+  "SENT",
+];
 
-// Admin user configuration
-const adminUser = {
-  email: 'admin@example.com',
-  password: 'Admin@123', // You should change this in production
-  role: 'ADMIN' as const
-}
+const CATEGORIES = [
+  "Electronics",
+  "Furniture",
+  "Clothing",
+  "Books",
+  "Sports Equipment",
+  "Office Supplies",
+  "Home & Garden",
+  "Automotive",
+  "Tools",
+  "Software",
+];
 
 async function main() {
-  console.log('Start seeding...')
+  console.log("🌱 Starting seed...");
+
+  // Clear existing data
+  await prisma.$transaction([
+    prisma.activity.deleteMany(),
+    prisma.attachment.deleteMany(),
+    prisma.quotationItem.deleteMany(),
+    prisma.quotation.deleteMany(),
+    prisma.product.deleteMany(),
+    prisma.productTag.deleteMany(),
+    prisma.category.deleteMany(),
+    prisma.user.deleteMany(),
+  ]);
 
   // Create admin user
-  try {
-    const hashedPassword = await hash(adminUser.password, 10)
-    
-    const admin = await prisma.user.upsert({
-      where: { email: adminUser.email },
-      update: {},
-      create: {
-        email: adminUser.email,
-        name: 'Admin User',
-        password: hashedPassword,
-        role: adminUser.role,
-      }
-    })
-    
-    console.log(`Created/Updated admin user: ${admin.email}`)
+  console.log("👤 Creating admin user...");
+  const adminPassword = await hash("admin123", 12);
+  const admin = await prisma.user.create({
+    data: {
+      email: "admin@example.com",
+      name: "Admin User",
+      password: adminPassword,
+      role: Role.ADMIN,
+      emailVerified: new Date(),
+      image: faker.image.avatar(),
+      isActive: true,
+    },
+  });
 
-    // Create additional users
-    for (let i = 0; i < 3; i++) {
-      const userEmail = faker.internet.email()
-      await prisma.user.create({
-        data: {
-          email: userEmail,
-          name: faker.person.fullName(),
-          password: hashedPassword,
-          role: faker.helpers.arrayElement(['MANAGER', 'USER']),
-        }
-      })
-    }
-  } catch (error) {
-    console.error('Error creating users:', error)
-  }
-
-  // Create product tags
-  const createdTags = []
-  for (const tagName of productTags) {
-    try {
-      const tag = await prisma.productTag.create({
-        data: {
-          id: faker.string.uuid(),
-          name: tagName
-        }
-      })
-      createdTags.push(tag)
-      console.log(`Created tag: ${tag.name}`)
-    } catch (error) {
-      console.error(`Error creating tag ${tagName}:`, error)
-    }
-  }
-
-  // Create categories with error handling
-  for (const categoryName of baseCategories) {
-    try {
-      const category = await prisma.category.upsert({
-        where: { name: categoryName },
-        update: {},
-        create: {
-          name: categoryName,
-        }
-      })
-      
-      // Create products for each category
-      const numberOfProducts = faker.number.int({ min: 3, max: 8 })
-      for (let i = 0; i < numberOfProducts; i++) {
-        const productName = faker.commerce.productName()
-        const randomTag = faker.helpers.arrayElement(createdTags)
-        
-        await prisma.product.create({
+  // Create regular users
+  console.log("👥 Creating regular users...");
+  const users = await Promise.all(
+    Array(TOTAL_USERS)
+      .fill(null)
+      .map(async () => {
+        const firstName = faker.person.firstName();
+        const lastName = faker.person.lastName();
+        return prisma.user.create({
           data: {
-            name: productName,
+            email: faker.internet.email({ firstName, lastName }),
+            name: `${firstName} ${lastName}`,
+            password: await hash("password123", 12),
+            role: faker.helpers.arrayElement([Role.USER, Role.MANAGER]),
+            emailVerified: faker.helpers.maybe(() => faker.date.past()),
+            image: faker.helpers.maybe(() => faker.image.avatar()),
+            isActive: true,
+          },
+        });
+      })
+  );
+
+  // Create categories
+  console.log("📁 Creating categories...");
+  const categories = await Promise.all(
+    CATEGORIES.slice(0, TOTAL_CATEGORIES).map((categoryName) => {
+      return prisma.category.create({
+        data: {
+          name: categoryName,
+        },
+      });
+    })
+  );
+
+  // Create products
+  console.log("📦 Creating products...");
+  const products = await Promise.all(
+    Array(TOTAL_PRODUCTS)
+      .fill(null)
+      .map((_, index) => {
+        return prisma.product.create({
+          data: {
+            name: `${faker.commerce.productName()}-${index + 1}`, // Ensure unique names
             description: faker.commerce.productDescription(),
-            categoryId: category.id,
+            categoryId: faker.helpers.arrayElement(categories).id,
             price: parseFloat(faker.commerce.price({ min: 10, max: 1000 })),
             stock: faker.number.int({ min: 0, max: 100 }),
-            sku: `SKU-${faker.string.alphanumeric(8).toUpperCase()}`,
-            image: faker.image.url(),
-            status: faker.helpers.arrayElement(['IN_STOCK', 'LOW_STOCK', 'OUT_OF_STOCK']),
+            sku: `SKU-${String(index + 1).padStart(3, "0")}`,
+            image: faker.helpers.maybe(() => faker.image.url()),
+            status: faker.helpers.arrayElement(Object.values(ProductStatus)),
             featured: faker.datatype.boolean(),
-            weight: faker.number.float({ min: 0.1, max: 20, fractionDigits: 2 }),
-            dimensions: {
-              length: faker.number.float({ min: 1, max: 100, fractionDigits: 2 }),
-              width: faker.number.float({ min: 1, max: 100, fractionDigits: 2 }),
-              height: faker.number.float({ min: 1, max: 100, fractionDigits: 2 })
-            },
-            tags: {
-              connect: [{ id: randomTag.id }]
-            }
-          }
-        })
-      }
-      
-      console.log(`Created/Updated category: ${category.name} with ${numberOfProducts} products`)
-    } catch (error) {
-      console.error(`Error creating category ${categoryName}:`, error)
-    }
-  }
-
-  // Create customers with addresses and quotations
-  const numberOfCustomers = 10
-  for (let i = 0; i < numberOfCustomers; i++) {
-    try {
-      const customer = await prisma.customer.create({
-        data: {
-          name: faker.person.fullName(),
-          company: faker.company.name(),
-          email: faker.internet.email(),
-          phone: faker.phone.number(),
-          taxId: faker.string.numeric(9),
-          notes: faker.lorem.sentence(),
-          isActive: true,
-          address: {
-            create: {
-              street: faker.location.streetAddress(),
-              city: faker.location.city(),
-              state: faker.location.state(),
-              postalCode: faker.location.zipCode(),
-              country: faker.location.country(),
-              isDefault: true
-            }
-          }
-        }
+            weight: faker.helpers.maybe(() =>
+              faker.number.float({ min: 0.1, max: 20 })
+            ),
+            dimensions: faker.helpers.maybe(() => ({
+              length: faker.number.float({ min: 1, max: 100 }),
+              width: faker.number.float({ min: 1, max: 100 }),
+              height: faker.number.float({ min: 1, max: 100 }),
+            })),
+          },
+        });
       })
-      console.log(`Created customer: ${customer.name}`)
+  );
 
-      // Create quotations for each customer
-      const numberOfQuotations = faker.number.int({ min: 1, max: 3 })
-      const products = await prisma.product.findMany()
-      const users = await prisma.user.findMany()
+  // Create quotations
+  console.log("📄 Creating quotations...");
+  for (let i = 0; i < TOTAL_QUOTATIONS; i++) {
+    const user = faker.helpers.arrayElement(users);
+    const date = faker.date.past({ years: 1 });
+    const validUntil = faker.date.future({ years: 1, refDate: date });
 
-      for (let j = 0; j < numberOfQuotations; j++) {
-        const numberOfItems = faker.number.int({ min: 1, max: 5 })
-        let subtotal = 0
-        const quotationItems = []
+    try {
+      // First create the quotation
+      const quotation = await prisma.quotation.create({
+        data: {
+          quotationNumber: `Q-${date.getFullYear()}-${String(i + 1).padStart(
+            3,
+            "0"
+          )}`,
+          userId: user.id,
+          date,
+          validUntil,
+          status: faker.helpers.arrayElement(Object.values(QuotationStatus)),
+          subtotal: 0,
+          taxRate: faker.number.float({ min: 0, max: 0.2 }),
+          taxAmount: 0,
+          discount: faker.number.float({ min: 0, max: 100 }),
+          discountType: faker.helpers.arrayElement(["PERCENTAGE", "FIXED"]),
+          shippingCost: faker.number.float({ min: 0, max: 50 }),
+          totalAmount: 0,
+          notes: faker.helpers.maybe(() => faker.lorem.paragraph()),
+          terms: faker.helpers.maybe(() => faker.lorem.paragraphs(2)),
+          paymentTerms: faker.helpers.arrayElement(Object.values(PaymentTerms)),
+          currency: faker.helpers.arrayElement(["USD", "EUR", "GBP"]),
+          revisionNumber: faker.number.int({ min: 0, max: 5 }),
+        },
+      });
 
-        // Create quotation items
-        for (let k = 0; k < numberOfItems; k++) {
-          const product = faker.helpers.arrayElement(products)
-          const quantity = faker.number.int({ min: 1, max: 10 })
-          const unitPrice = product.price
-          const discount = faker.number.float({ min: 0, max: 10, fractionDigits: 2 })
-          const tax = faker.number.float({ min: 0, max: 5, fractionDigits: 2 })
-          const total = (quantity * unitPrice * (1 - discount / 100)) * (1 + tax / 100)
+      // Create items
+      const itemsCount = faker.number.int({
+        min: 1,
+        max: MAX_ITEMS_PER_QUOTATION,
+      });
+      let subtotal = 0;
 
-          quotationItems.push({
-            productId: product.id,
+      for (let j = 0; j < itemsCount; j++) {
+        const selectedProduct = faker.helpers.arrayElement(products);
+        const quantity = faker.number.int({ min: 1, max: 10 });
+        const unitPrice = selectedProduct.price;
+        const discount = faker.number.float({ min: 0, max: 20 });
+        const tax = faker.number.float({ min: 0, max: 0.2 });
+        const total = quantity * unitPrice * (1 - discount / 100) * (1 + tax);
+
+        await prisma.quotationItem.create({
+          data: {
+            quotationId: quotation.id,
+            productId: selectedProduct.id,
             quantity,
             unitPrice,
             discount,
             tax,
             total,
-            notes: faker.commerce.productDescription()
-          })
+            notes: faker.helpers.maybe(() => faker.lorem.sentence()),
+          },
+        });
 
-          subtotal += total
-        }
-
-        const taxRate = faker.number.float({ min: 0, max: 10, fractionDigits: 2 })
-        const taxAmount = subtotal * (taxRate / 100)
-        const discount = faker.number.float({ min: 0, max: 15, fractionDigits: 2 })
-        const shippingCost = faker.number.float({ min: 0, max: 50, fractionDigits: 2 })
-        const totalAmount = subtotal + taxAmount - discount + shippingCost
-
-        // Create quotation
-        const quotation = await prisma.quotation.create({
-          data: {
-            quotationNumber: `QT-${faker.string.numeric(6)}`,
-            customerId: customer.id,
-            userId: faker.helpers.arrayElement(users).id,
-            date: faker.date.recent(),
-            validUntil: faker.date.future(),
-            status: faker.helpers.arrayElement(['DRAFT', 'PENDING', 'APPROVED', 'REJECTED', 'EXPIRED']),
-            subtotal,
-            taxRate,
-            taxAmount,
-            discount,
-            discountType: faker.helpers.arrayElement(['PERCENTAGE', 'FIXED']),
-            shippingCost,
-            totalAmount,
-            notes: faker.lorem.paragraph(),
-            terms: faker.lorem.paragraphs(2),
-            paymentTerms: faker.helpers.arrayElement(['IMMEDIATE', 'NET_15', 'NET_30', 'NET_45', 'NET_60']),
-            currency: 'USD',
-            items: {
-              create: quotationItems
-            },
-            activities: {
-              create: {
-                userId: faker.helpers.arrayElement(users).id,
-                type: 'CREATED',
-                description: 'Quotation created'
-              }
-            },
-            attachments: {
-              create: {
-                filename: `quotation_${faker.string.alphanumeric(8)}.pdf`,
-                fileUrl: faker.internet.url(),
-                fileType: 'application/pdf',
-                fileSize: faker.number.int({ min: 100000, max: 5000000 })
-              }
-            }
-          }
-        })
-
-        console.log(`Created quotation: ${quotation.quotationNumber}`)
+        subtotal += total;
       }
+
+      // Create activities
+      await prisma.activity.create({
+        data: {
+          quotationId: quotation.id,
+          userId: user.id,
+          type: "CREATED",
+          description: "Quotation created",
+          createdAt: date,
+        },
+      });
+
+      // Add random additional activities
+      if (faker.datatype.boolean()) {
+        const additionalActivities = Array(faker.number.int({ min: 1, max: 3 }))
+          .fill(null)
+          .map(() => ({
+            quotationId: quotation.id,
+            userId: faker.helpers.arrayElement([...users, admin]).id,
+            type: faker.helpers.arrayElement(ACTIVITY_TYPES.slice(1)),
+            description: faker.lorem.sentence(),
+            createdAt: faker.date.between({ from: date, to: new Date() }),
+          }));
+
+        await prisma.activity.createMany({
+          data: additionalActivities,
+        });
+      }
+
+      // Create attachments
+      if (faker.datatype.boolean()) {
+        const attachments = Array(faker.number.int({ min: 1, max: 3 }))
+          .fill(null)
+          .map(() => ({
+            quotationId: quotation.id,
+            filename: `${faker.system.fileName()}.${faker.helpers.arrayElement([
+              "pdf",
+              "doc",
+              "xlsx",
+            ])}`,
+            fileUrl: faker.internet.url(),
+            fileType: faker.helpers.arrayElement([
+              "application/pdf",
+              "application/msword",
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ]),
+            fileSize: faker.number.int({ min: 1024, max: 10485760 }), // 1KB to 10MB
+            uploadedAt: faker.date.between({ from: date, to: new Date() }),
+          }));
+
+        await prisma.attachment.createMany({
+          data: attachments,
+        });
+      }
+
+      // Update quotation with calculated totals
+      const taxAmount = subtotal * quotation.taxRate;
+      const totalAmount =
+        subtotal + taxAmount - quotation.discount + quotation.shippingCost;
+
+      await prisma.quotation.update({
+        where: { id: quotation.id },
+        data: {
+          subtotal,
+          taxAmount,
+          totalAmount,
+        },
+      });
     } catch (error) {
-      console.error('Error creating customer and quotations:', error)
+      console.error(`Error creating quotation ${i + 1}:`, error);
+      throw error;
     }
   }
 
-  console.log('Seeding finished.')
+  console.log("✅ Seed completed successfully!");
 }
 
 main()
   .catch((e) => {
-    console.error('Error in seed script:', e)
-    process.exit(1)
+    console.error("❌ Error seeding data:", e);
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  })
+    await prisma.$disconnect();
+  });

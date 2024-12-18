@@ -1,32 +1,36 @@
-import { PrismaAdapter } from "@next-auth/prisma-adapter"
-import CredentialsProvider from 'next-auth/providers/credentials'
-import { prisma } from '@/lib/db'
-import { compare } from 'bcryptjs'
-import { type NextAuthOptions } from 'next-auth'
+// lib/auth.ts
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { prisma } from "./prisma";
+import { compare } from "bcrypt";
+import { Role } from "@prisma/client";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
+  secret: process.env.NEXTAUTH_SECRET,
   session: {
-    strategy: 'jwt',
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
-    signIn: '/login',
+    signIn: "/login",
   },
   providers: [
     CredentialsProvider({
-      name: 'credentials',
+      name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error('Missing credentials')
+          throw new Error("Invalid credentials");
         }
 
         const user = await prisma.user.findUnique({
           where: {
-            email: credentials.email
+            email: credentials.email,
           },
           select: {
             id: true,
@@ -34,22 +38,21 @@ export const authOptions: NextAuthOptions = {
             name: true,
             password: true,
             role: true,
-            isActive: true,
-          }
-        })
+            image: true, // Add image to selected fields
+          },
+        });
 
-        if (!user || !user.password) {
-          throw new Error('Invalid credentials')
+        if (!user) {
+          throw new Error("User not found");
         }
 
-        if (!user.isActive) {
-          throw new Error('User is inactive')
-        }
+        const isPasswordValid = await compare(
+          credentials.password,
+          user.password
+        );
 
-        const isValid = await compare(credentials.password, user.password)
-
-        if (!isValid) {
-          throw new Error('Invalid credentials')
+        if (!isPasswordValid) {
+          throw new Error("Invalid password");
         }
 
         return {
@@ -57,24 +60,37 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
-        }
-      }
-    })
+          image: user.image, // Include image in returned user object
+        };
+      },
+    }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = user.role
-        token.id = user.id
+    async jwt({ token, user, trigger, session }) {
+      if (trigger === "update" && session?.user) {
+        // Handle user updates
+        return { ...token, ...session.user };
       }
-      return token
+
+      if (user) {
+        // Initial sign in
+        token.id = user.id;
+        token.email = user.email;
+        token.name = user.name;
+        token.role = user.role;
+        token.picture = user.image; // Store image in token
+      }
+      return token;
     },
     async session({ session, token }) {
-      if (session?.user) {
-        session.user.role = token.role
-        session.user.id = token.id
+      if (session.user) {
+        session.user.id = token.id;
+        session.user.role = token.role as Role;
+        session.user.email = token.email;
+        session.user.name = token.name as string;
+        session.user.image = token.picture as string; // Add image to session
       }
-      return session
-    }
-  }
-}
+      return session;
+    },
+  },
+};
