@@ -1,7 +1,6 @@
 // components/layouts/AdminLayout.tsx
 "use client";
 import React, { useState } from "react";
-import UserMenu from "../UserMenu";
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -129,44 +128,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
 
       {/* Main Content Area */}
       <div className="lg:pl-64 flex flex-col min-h-screen">
-        {/* Sticky Header */}
-        <div className="sticky top-0 z-40 bg-white shadow-sm w-full">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <button
-                  type="button"
-                  className="lg:hidden -ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900"
-                  onClick={() => setSidebarOpen(true)}
-                >
-                  <span className="sr-only">Open sidebar</span>
-                  <Bars3Icon className="h-6 w-6" />
-                </button>
-                <div className="ml-4">
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {title}
-                  </h1>
-                  {subtitle && (
-                    <p className="mt-1 text-sm text-gray-500">
-                      {subtitle}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center">
-                {actionButton && (
-                  <button
-                    onClick={actionButton.onClick}
-                    className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-                  >
-                    {actionButton.label}
-                  </button>
-                )}
-                <UserMenu />
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Main Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8">

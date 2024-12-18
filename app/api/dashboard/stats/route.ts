@@ -1,138 +1,235 @@
 // app/api/dashboard/stats/route.ts
-import { NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
-import { Prisma } from '@prisma/client';
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getAuthSession } from "../../auth/[...nextauth]/route";
+import { ProductStatus, QuotationStatus } from "@prisma/client";
 
 export async function GET() {
   try {
-    // Test database connection first
-    await prisma.$connect();
-    console.log('Database connection successful');
+    const session = await getAuthSession();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const [
+      productStats,
+      quotationStats,
       totalProducts,
-      totalCustomers,
       totalQuotations,
-      activeCustomers,
-      productsByStatus,
-      quotationsByStatus,
+      totalUsers,
       recentQuotations,
-      lowStockProducts
+      topProducts,
+      activityStats,
+      notificationStats,
+      attachmentStats,
+      quotationValueStats,
     ] = await Promise.all([
-      prisma.product.count().catch(e => {
-        console.error('Error counting products:', e);
-        return 0;
-      }),
-      
-      prisma.customer.count().catch(e => {
-        console.error('Error counting customers:', e);
-        return 0;
-      }),
-      
-      prisma.quotation.count().catch(e => {
-        console.error('Error counting quotations:', e);
-        return 0;
-      }),
-      
-      prisma.customer.count({
-        where: { isActive: true }
-      }).catch(e => {
-        console.error('Error counting active customers:', e);
-        return 0;
-      }),
-      
+      // Product status counts
       prisma.product.groupBy({
-        by: ['status'],
-        _count: true
-      }).catch(e => {
-        console.error('Error grouping products by status:', e);
-        return [];
+        by: ["status"],
+        _count: true,
       }),
-      
+
+      // Quotation status counts
       prisma.quotation.groupBy({
-        by: ['status'],
-        _count: true
-      }).catch(e => {
-        console.error('Error grouping quotations by status:', e);
-        return [];
+        by: ["status"],
+        _count: true,
       }),
-      
+
+      // Total products
+      prisma.product.count(),
+
+      // Total quotations
+      prisma.quotation.count(),
+
+      // Total users
+      prisma.user.count({
+        where: {
+          role: "USER",
+        },
+      }),
+
+      // Recent quotations with items and activities
       prisma.quotation.findMany({
         take: 5,
-        orderBy: { createdAt: 'desc' },
+        orderBy: {
+          createdAt: "desc",
+        },
         include: {
-          customer: {
-            select: { name: true }
-          }
-        }
-      }).catch(e => {
-        console.error('Error fetching recent quotations:', e);
-        return [];
+          user: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+          items: {
+            include: {
+              product: {
+                select: {
+                  name: true,
+                  price: true,
+                },
+              },
+            },
+          },
+          activities: {
+            take: 3,
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+        },
       }),
-      
-      prisma.product.findMany({
-        where: { status: 'LOW_STOCK' },
+
+      // Top selling products
+      prisma.quotationItem.groupBy({
+        by: ["productId"],
+        _sum: {
+          quantity: true,
+          total: true,
+        },
+        orderBy: {
+          _sum: {
+            quantity: "desc",
+          },
+        },
         take: 5,
-        orderBy: { stock: 'asc' }
-      }).catch(e => {
-        console.error('Error fetching low stock products:', e);
-        return [];
-      })
+      }),
+
+      // Recent activities
+      prisma.activity.findMany({
+        take: 10,
+        orderBy: {
+          createdAt: "desc",
+        },
+        include: {
+          quotation: {
+            select: {
+              quotationNumber: true,
+            },
+          },
+        },
+      }),
+
+      // Notification stats
+      prisma.notification.groupBy({
+        by: ["read"],
+        _count: true,
+      }),
+
+      // Attachment stats
+      prisma.attachment.aggregate({
+        _sum: {
+          fileSize: true,
+        },
+        _count: true,
+      }),
+
+      // Quotation value stats by status
+      prisma.quotation.groupBy({
+        by: ["status"],
+        _sum: {
+          totalAmount: true,
+        },
+      }),
     ]);
 
-    // Calculate total revenue
-    const revenue = await prisma.quotation.aggregate({
-      where: { status: 'APPROVED' },
-      _sum: { totalAmount: true }
-    }).catch(e => {
-      console.error('Error calculating revenue:', e);
-      return { _sum: { totalAmount: null } };
+    // Initialize status counts with zeros
+    const productsByStatus = Object.values(ProductStatus).reduce(
+      (acc, status) => {
+        acc[status] = 0;
+        return acc;
+      },
+      {} as Record<ProductStatus, number>
+    );
+
+    const quotationsByStatus = Object.values(QuotationStatus).reduce(
+      (acc, status) => {
+        acc[status] = 0;
+        return acc;
+      },
+      {} as Record<QuotationStatus, number>
+    );
+
+    // Fill in actual counts
+    productStats.forEach((stat) => {
+      productsByStatus[stat.status] = stat._count;
     });
 
-    await prisma.$disconnect();
+    quotationStats.forEach((stat) => {
+      quotationsByStatus[stat.status] = stat._count;
+    });
+
+    // Calculate unread notifications
+    const unreadNotifications =
+      notificationStats.find((stat) => !stat.read)?._count || 0;
+
+    // Calculate total storage used by attachments
+    const totalStorageUsed = attachmentStats._sum.fileSize || 0;
+
+    // Calculate quotation values by status
+    const quotationValues = quotationValueStats.reduce((acc, stat) => {
+      acc[stat.status] = stat._sum.totalAmount || 0;
+      return acc;
+    }, {} as Record<QuotationStatus, number>);
 
     return NextResponse.json({
-      totalProducts,
-      totalCustomers,
-      totalQuotations,
-      activeCustomers,
-      revenue: revenue._sum.totalAmount || 0,
-      productsByStatus: productsByStatus.reduce((acc, curr) => ({
-        ...acc,
-        [curr.status]: curr._count
-      }), {}),
-      quotationsByStatus: quotationsByStatus.reduce((acc, curr) => ({
-        ...acc,
-        [curr.status]: curr._count
-      }), {}),
-      recentQuotations,
-      lowStockProducts
+      summary: {
+        totalProducts,
+        totalQuotations,
+        totalUsers,
+        totalStorageUsed,
+        unreadNotifications,
+      },
+      productsByStatus,
+      quotationsByStatus,
+      quotationValues,
+      recentQuotations: recentQuotations.map((q) => ({
+        id: q.id,
+        quotationNumber: q.quotationNumber,
+        date: q.date,
+        status: q.status,
+        totalAmount: q.totalAmount,
+        currency: q.currency,
+        user: q.user,
+        itemCount: q.items.length,
+        recentActivities: q.activities,
+      })),
+      topProducts: await Promise.all(
+        topProducts.map(async (p) => {
+          const product = await prisma.product.findUnique({
+            where: { id: p.productId },
+            select: { name: true, sku: true },
+          });
+          return {
+            ...product,
+            totalQuantity: p._sum.quantity,
+            totalValue: p._sum.total,
+          };
+        })
+      ),
+      recentActivities: activityStats.map((activity) => ({
+        id: activity.id,
+        type: activity.type,
+        description: activity.description,
+        createdAt: activity.createdAt,
+        quotationNumber: activity.quotation.quotationNumber,
+      })),
+      notifications: {
+        total: notificationStats.reduce((acc, stat) => acc + stat._count, 0),
+        unread: unreadNotifications,
+      },
+      attachments: {
+        count: attachmentStats._count,
+        totalSize: totalStorageUsed,
+      },
     });
   } catch (error) {
-    console.error('Detailed error in dashboard stats:', error);
-    
-    // Handle Prisma-specific errors
-    if (error instanceof Prisma.PrismaClientInitializationError) {
-      console.error('Database connection failed:', error.message);
-      return NextResponse.json(
-        { error: 'Database connection failed' },
-        { status: 503 }
-      );
-    }
-    
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      console.error('Prisma known error:', error.message, 'Code:', error.code);
-      return NextResponse.json(
-        { error: `Database error: ${error.code}` },
-        { status: 500 }
-      );
-    }
-
+    console.error("Error in dashboard stats API:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch dashboard stats', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: "Failed to fetch dashboard stats" },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

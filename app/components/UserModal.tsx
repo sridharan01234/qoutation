@@ -1,200 +1,298 @@
-// components/UserModal.tsx
-import { Role } from '@prisma/client'
-import React, { useState, useEffect } from 'react'
-
-interface User {
-  id: string
-  name?: string
-  email: string
-  emailVerified?: Date
-  image?: string
-  role: Role
-  isActive: boolean
-  createdAt: Date
-  updatedAt: Date
-}
+import { Fragment } from "react";
+import { Dialog, Transition } from "@headlessui/react";
+import {
+  FiX,
+  FiUser,
+  FiBriefcase,
+  FiMapPin,
+  FiGlobe,
+  FiLink,
+} from "react-icons/fi";
+import { format } from "date-fns";
 
 interface UserModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSubmit: (data: Partial<User>) => Promise<void>
-  initialData?: User | null
+  user: any;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-const UserModal: React.FC<UserModalProps> = ({
-  isOpen,
-  onClose,
-  onSubmit,
-  initialData
-}) => {
-  const [formData, setFormData] = useState<Partial<User>>({
-    name: '',
-    email: '',
-    role: 'USER' as Role,
-    isActive: true,
-    image: ''
-  })
-
-  const [errors, setErrors] = useState<Partial<Record<keyof User, string>>>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        name: initialData.name || '',
-        email: initialData.email,
-        role: initialData.role,
-        isActive: initialData.isActive,
-        image: initialData.image || ''
-      })
-    } else {
-      // Reset form when opening for new user
-      setFormData({
-        name: '',
-        email: '',
-        role: 'USER' as Role,
-        isActive: true,
-        image: ''
-      })
-    }
-    setErrors({})
-  }, [initialData, isOpen])
-
-  const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof User, string>> = {}
-
-    if (!formData.email?.trim()) {
-      newErrors.email = 'Email is required'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!validateForm()) return
-
-    setIsSubmitting(true)
-    try {
-      const submitData = {
-        name: formData.name?.trim() || null,
-        email: formData.email?.trim(),
-        role: formData.role,
-        isActive: formData.isActive,
-        image: formData.image?.trim() || null
-      }
-
-      await onSubmit(submitData)
-      onClose()
-    } catch (error) {
-      console.error('Form submission error:', error)
-      setErrors(prev => ({
-        ...prev,
-        submit: error.message || 'Failed to save user. Please try again.'
-      }))
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
+export default function UserModal({ user, isOpen, onClose }: UserModalProps) {
   return (
-    <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${isOpen ? '' : 'hidden'}`}>
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4">
-          {initialData ? 'Edit User' : 'Add New User'}
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Name</label>
-            <input
-              type="text"
-              value={formData.name || ''}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
+    <Transition appear show={isOpen} as={Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={onClose}>
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black bg-opacity-25" />
+        </Transition.Child>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Email *</label>
-            <input
-              type="email"
-              value={formData.email || ''}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
-              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 ${
-                errors.email ? 'border-red-500' : ''
-              }`}
-              required
-            />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Role</label>
-            <select
-              value={formData.role}
-              onChange={(e) => setFormData({...formData, role: e.target.value as Role})}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        <div className="fixed inset-0 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
             >
-              <option value="USER">User</option>
-              <option value="ADMIN">Admin</option>
-              <option value="MANAGER">Manager</option>
-            </select>
-          </div>
+              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white p-6 shadow-xl transition-all">
+                <div className="absolute right-6 top-6">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-full p-1 text-gray-400 hover:text-gray-500"
+                  >
+                    <FiX className="h-6 w-6" />
+                  </button>
+                </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Image URL</label>
-            <input
-              type="url"
-              value={formData.image || ''}
-              onChange={(e) => setFormData({...formData, image: e.target.value})}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
+                {/* Header */}
+                <div className="flex items-center space-x-4">
+                  <div className="relative h-20 w-20 flex-shrink-0">
+                    {user.image ? (
+                      <img
+                        src={user.image}
+                        alt={user.name}
+                        className="rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center rounded-full bg-gray-100">
+                        <FiUser className="h-8 w-8 text-gray-400" />
+                      </div>
+                    )}
+                    <div
+                      className={`absolute bottom-0 right-0 h-4 w-4 rounded-full border-2 border-white ${
+                        user.isActive ? "bg-green-400" : "bg-gray-400"
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      {user.displayName ||
+                        `${user.firstName} ${user.lastName}` ||
+                        user.name}
+                    </h3>
+                    <p className="text-sm text-gray-500">{user.email}</p>
+                  </div>
+                </div>
 
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={formData.isActive}
-              onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label className="ml-2 block text-sm text-gray-700">Active</label>
-          </div>
+                {/* Content */}
+                <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  {/* Personal Information */}
+                  <div className="space-y-4">
+                    <h4 className="flex items-center text-sm font-medium text-gray-500">
+                      <FiUser className="mr-2 h-4 w-4" />
+                      Personal Information
+                    </h4>
+                    <div className="rounded-lg bg-gray-50 p-4 space-y-2">
+                      <div>
+                        <p className="text-xs text-gray-500">Full Name</p>
+                        <p className="text-sm text-gray-900">{`${
+                          user.firstName || ""
+                        } ${user.lastName || ""}`}</p>
+                      </div>
+                      {user.gender && (
+                        <div>
+                          <p className="text-xs text-gray-500">Gender</p>
+                          <p className="text-sm text-gray-900">{user.gender}</p>
+                        </div>
+                      )}
+                      {user.dateOfBirth && (
+                        <div>
+                          <p className="text-xs text-gray-500">Date of Birth</p>
+                          <p className="text-sm text-gray-900">
+                            {format(new Date(user.dateOfBirth), "MMMM d, yyyy")}
+                          </p>
+                        </div>
+                      )}
+                      {user.phoneNumber && (
+                        <div>
+                          <p className="text-xs text-gray-500">Phone</p>
+                          <p className="text-sm text-gray-900">
+                            {user.phoneNumber}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-          {errors.submit && (
-            <div className="text-red-600 text-sm">{errors.submit}</div>
-          )}
+                  {/* Business Information */}
+                  <div className="space-y-4">
+                    <h4 className="flex items-center text-sm font-medium text-gray-500">
+                      <FiBriefcase className="mr-2 h-4 w-4" />
+                      Business Information
+                    </h4>
+                    <div className="rounded-lg bg-gray-50 p-4 space-y-2">
+                      {user.company && (
+                        <div>
+                          <p className="text-xs text-gray-500">Company</p>
+                          <p className="text-sm text-gray-900">
+                            {user.company}
+                          </p>
+                        </div>
+                      )}
+                      {user.jobTitle && (
+                        <div>
+                          <p className="text-xs text-gray-500">Job Title</p>
+                          <p className="text-sm text-gray-900">
+                            {user.jobTitle}
+                          </p>
+                        </div>
+                      )}
+                      {user.department && (
+                        <div>
+                          <p className="text-xs text-gray-500">Department</p>
+                          <p className="text-sm text-gray-900">
+                            {user.department}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-          <div className="flex justify-end space-x-3 mt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              disabled={isSubmitting}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? 'Saving...'
-                : initialData
-                ? 'Update'
-                : 'Create'}
-            </button>
+                  {/* Address */}
+                  <div className="space-y-4">
+                    <h4 className="flex items-center text-sm font-medium text-gray-500">
+                      <FiMapPin className="mr-2 h-4 w-4" />
+                      Address
+                    </h4>
+                    <div className="rounded-lg bg-gray-50 p-4 space-y-2">
+                      {user.address && (
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Street Address
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            {user.address}
+                          </p>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-4">
+                        {user.city && (
+                          <div>
+                            <p className="text-xs text-gray-500">City</p>
+                            <p className="text-sm text-gray-900">{user.city}</p>
+                          </div>
+                        )}
+                        {user.state && (
+                          <div>
+                            <p className="text-xs text-gray-500">State</p>
+                            <p className="text-sm text-gray-900">
+                              {user.state}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        {user.country && (
+                          <div>
+                            <p className="text-xs text-gray-500">Country</p>
+                            <p className="text-sm text-gray-900">
+                              {user.country}
+                            </p>
+                          </div>
+                        )}
+                        {user.postalCode && (
+                          <div>
+                            <p className="text-xs text-gray-500">Postal Code</p>
+                            <p className="text-sm text-gray-900">
+                              {user.postalCode}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Preferences & Social */}
+                  <div className="space-y-4">
+                    <h4 className="flex items-center text-sm font-medium text-gray-500">
+                      <FiGlobe className="mr-2 h-4 w-4" />
+                      Preferences & Social
+                    </h4>
+                    <div className="rounded-lg bg-gray-50 p-4 space-y-2">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500">Language</p>
+                          <p className="text-sm text-gray-900">
+                            {user.language}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Timezone</p>
+                          <p className="text-sm text-gray-900">
+                            {user.timezone}
+                          </p>
+                        </div>
+                      </div>
+                      {(user.linkedinUrl ||
+                        user.twitterUrl ||
+                        user.websiteUrl) && (
+                        <div className="pt-2">
+                          <p className="text-xs text-gray-500 mb-2">
+                            Social Links
+                          </p>
+                          <div className="flex space-x-2">
+                            {user.linkedinUrl && (
+                              <a
+                                href={user.linkedinUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-700"
+                              >
+                                <FiLink className="h-4 w-4" />
+                              </a>
+                            )}
+                            {user.twitterUrl && (
+                              <a
+                                href={user.twitterUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-700"
+                              >
+                                <FiLink className="h-4 w-4" />
+                              </a>
+                            )}
+                            {user.websiteUrl && (
+                              <a
+                                href={user.websiteUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-700"
+                              >
+                                <FiLink className="h-4 w-4" />
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Close
+                  </button>
+                </div>
+              </Dialog.Panel>
+            </Transition.Child>
           </div>
-        </form>
-      </div>
-    </div>
-  )
+        </div>
+      </Dialog>
+    </Transition>
+  );
 }
-
-export default UserModal

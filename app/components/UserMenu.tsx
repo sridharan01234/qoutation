@@ -6,6 +6,7 @@ import { signOut, useSession } from 'next-auth/react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-toastify'
+import Avatar from './Avatar'
 
 interface Notification {
   id: string;
@@ -47,192 +48,235 @@ const Icons = {
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
     </svg>
-  )
-}
+  ),
+  Camera: () => (
+
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+    </svg>
+  ),
+};
 
 export default function UserMenu() {
-  const { data: session } = useSession()
-  const [isOpen, setIsOpen] = useState(false)
-  const [showNotifications, setShowNotifications] = useState(false)
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [unreadCount, setUnreadCount] = useState(0)
-  const menuRef = useRef<HTMLDivElement>(null)
-  const notificationRef = useRef<HTMLDivElement>(null)
-  const router = useRouter()
+  const { data: session, update } = useSession();
+  const [isOpen, setIsOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const eventSourceRef = useRef<EventSource | null>(null);
+  const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-// Fetch initial notifications and setup SSE
-useEffect(() => {
-  if (session?.user) {
-    fetchNotifications();
-    const cleanup = setupSSE();
-    return () => {
-      cleanup?.();
-    };
-  }
-}, [session]);
-
-const fetchNotifications = async () => {
-  try {
-    const response = await fetch('/api/notifications', {
-      headers: {
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+  // Fetch initial notifications and setup SSE
+  useEffect(() => {
+    if (session?.user) {
+      fetchNotifications();
+      const cleanup = setupSSE();
+      return () => {
+        cleanup?.();
+      };
     }
-    
-    const data = await response.json();
-    setNotifications(data);
-    setUnreadCount(data.filter((n: Notification) => !n.read).length);
-  } catch (error) {
-    console.error('Error fetching notifications:', error);
-    toast.error('Failed to fetch notifications');
-  }
-};
+  }, [session]);
 
-const setupSSE = () => {
-  // Clean up existing connection if any
-  if (eventSourceRef.current) {
-    eventSourceRef.current.close();
-  }
+  const handleAvatarClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    fileInputRef.current?.click();
+  };
 
-  try {
-    const eventSource = new EventSource('/api/notifications');
-    eventSourceRef.current = eventSource;
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        
-        // Ignore heartbeat messages
-        if (data.type === 'heartbeat') return;
-        
-        // Handle connected message
-        if (data.type === 'connected') {
-          console.log('Connected to notification service');
-          return;
-        }
+    // Validate file type and size
+    const validTypes = ["image/jpeg", "image/png", "image/gif"];
+    if (!validTypes.includes(file.type)) {
+      toast.error("Please upload a valid image file (JPEG, PNG, or GIF)");
+      return;
+    }
 
-        // Handle actual notification
-        setNotifications(prev => {
-          // Prevent duplicate notifications
-          if (prev.some(n => n.id === data.id)) {
-            return prev;
+    if (file.size > 5 * 1024 * 1024) {
+      // 5MB limit
+      toast.error("File size should be less than 5MB");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/profile/avatar", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload image");
+      }
+
+      const data = await response.json();
+      await update({ image: data.imageUrl });
+      toast.success("Profile picture updated successfully");
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      toast.error("Failed to update profile picture");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch("/api/notifications", {
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setNotifications(data);
+      setUnreadCount(data.filter((n: Notification) => !n.read).length);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      toast.error("Failed to fetch notifications");
+    }
+  };
+
+  const setupSSE = () => {
+    // Clean up existing connection if any
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
+
+    try {
+      const eventSource = new EventSource("/api/notifications");
+      eventSourceRef.current = eventSource;
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+
+          // Ignore heartbeat messages
+          if (data.type === "heartbeat") return;
+
+          // Handle connected message
+          if (data.type === "connected") {
+            console.log("Connected to notification service");
+            return;
           }
-          return [data, ...prev];
-        });
-        
-        setUnreadCount(prev => prev + 1);
-        toast.info(data.title);
-      } catch (error) {
-        console.error('Error processing notification:', error);
-      }
-    };
 
-    eventSource.onerror = (error) => {
-      console.error('SSE error:', error);
-      eventSource.close();
-      eventSourceRef.current = null;
-      
-      // Attempt to reconnect after 5 seconds
-      setTimeout(() => {
-        setupSSE();
-      }, 5000);
-    };
+          // Handle actual notification
+          setNotifications((prev) => {
+            // Prevent duplicate notifications
+            if (prev.some((n) => n.id === data.id)) {
+              return prev;
+            }
+            return [data, ...prev];
+          });
 
-    return () => {
-      eventSource.close();
-      eventSourceRef.current = null;
-    };
-  } catch (error) {
-    console.error('Error setting up SSE:', error);
-    return undefined;
-  }
-};
+          setUnreadCount((prev) => prev + 1);
+          toast.info(data.title);
+        } catch (error) {
+          console.error("Error processing notification:", error);
+        }
+      };
 
-const markAsRead = async (notificationId: string) => {
-  try {
-    const response = await fetch(`/api/notifications/${notificationId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ read: true })
-    });
+      eventSource.onerror = (error) => {
+        console.error("SSE error:", error);
+        eventSource.close();
+        eventSourceRef.current = null;
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+        // Attempt to reconnect after 5 seconds
+        setTimeout(() => {
+          setupSSE();
+        }, 5000);
+      };
+
+      return () => {
+        eventSource.close();
+        eventSourceRef.current = null;
+      };
+    } catch (error) {
+      console.error("Error setting up SSE:", error);
+      return undefined;
     }
+  };
 
-    setNotifications(prev =>
-      prev.map(n =>
-        n.id === notificationId ? { ...n, read: true } : n
-      )
-    );
-    
-    setUnreadCount(prev => Math.max(0, prev - 1));
-  } catch (error) {
-    console.error('Error marking notification as read:', error);
-    toast.error('Failed to mark notification as read');
-  }
-};
+  const markAsRead = async (notificationId: string) => {
+    try {
+      const response = await fetch(`/api/notifications/${notificationId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ read: true }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
+      );
+
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      toast.error("Failed to mark notification as read");
+    }
+  };
 
   const menuItems = [
     {
-      label: 'Profile',
+      label: "Profile",
       icon: <Icons.Profile />,
-      href: '/profile',
-      onClick: () => router.push('/profile')
+      href: "/profile",
+      onClick: () => router.push("/profile"),
     },
-    {
-      label: 'Dashboard',
-      icon: <Icons.Dashboard />,
-      href: '/dashboard',
-      onClick: () => router.push('/dashboard')
-    },
-    {
-      label: 'Settings',
-      icon: <Icons.Settings />,
-      href: '/settings',
-      onClick: () => router.push('/settings')
-    },
-    ...(session?.user?.role === 'ADMIN' ? [
-      {
-        label: 'Admin Panel',
-        icon: <Icons.Admin />,
-        href: '/admin',
-        onClick: () => router.push('/admin')
-      }
-    ] : []),
-  ]
-
+    ...(session?.user?.role === "ADMIN"
+      ? [
+          {
+            label: "Admin Panel",
+            icon: <Icons.Admin />,
+            href: "/admin",
+            onClick: () => router.push("/admin"),
+          },
+        ]
+      : []),
+  ];
 
   return (
     <div className="relative flex items-center gap-4">
-    {/* Notifications Bell */}
-    <div className="relative" ref={notificationRef}>
-      <button
-        onClick={() => setShowNotifications(!showNotifications)}
-        className="p-2 text-gray-600 hover:text-gray-800 rounded-full hover:bg-gray-100"
-      >
-        <Icons.Notifications />
-        {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 h-5 w-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
-            {unreadCount}
-          </span>
-        )}
-      </button>
+      {/* Notifications Bell */}
+      <div className="relative" ref={notificationRef}>
+        <button
+          onClick={() => setShowNotifications(!showNotifications)}
+          className="p-2 text-gray-600 hover:text-gray-800 rounded-full hover:bg-gray-100"
+        >
+          <Icons.Notifications />
+          {unreadCount > 0 && (
+            <span className="absolute top-0 right-0 h-5 w-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
+              {unreadCount}
+            </span>
+          )}
+        </button>
 
-        {/* Notifications Dropdown */}
         {/* Notifications Dropdown */}
         {showNotifications && (
           <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
             <div className="px-4 py-2 border-b border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+              <h3 className="text-sm font-semibold text-gray-900">
+                Notifications
+              </h3>
             </div>
             <div className="max-h-96 overflow-y-auto">
               {notifications.length === 0 ? (
@@ -244,11 +288,13 @@ const markAsRead = async (notificationId: string) => {
                   <div
                     key={notification.id}
                     className={`px-4 py-3 hover:bg-gray-50 cursor-pointer ${
-                      !notification.read ? 'bg-blue-50' : ''
+                      !notification.read ? "bg-blue-50" : ""
                     }`}
                     onClick={() => markAsRead(notification.id)}
                   >
-                    <p className="text-sm text-gray-800">{notification.title}</p>
+                    <p className="text-sm text-gray-800">
+                      {notification.title}
+                    </p>
                     <p className="text-xs text-gray-500 mt-1">
                       {new Date(notification.createdAt).toLocaleString()}
                     </p>
@@ -259,7 +305,7 @@ const markAsRead = async (notificationId: string) => {
             {notifications.length > 0 && (
               <div className="px-4 py-2 border-t border-gray-200">
                 <button
-                  onClick={() => router.push('/notifications')}
+                  onClick={() => router.push("/notifications")}
                   className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                 >
                   View all notifications
@@ -269,25 +315,38 @@ const markAsRead = async (notificationId: string) => {
           </div>
         )}
       </div>
-      
+
       {/* User Menu */}
       <div className="relative" ref={menuRef}>
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center space-x-3 focus:outline-none"
         >
-          <div className="relative w-10 h-10 rounded-full overflow-hidden">
+          <div
+            className="relative w-10 h-10 rounded-full overflow-hidden group cursor-pointer"
+            onClick={handleAvatarClick}
+          >
             {session?.user?.image ? (
-              <Image
-                src={session.user.image}
-                alt="Profile"
-                fill
-                className="object-cover"
-              />
+              <>
+                <Image
+                  src={session.user.image}
+                  alt="Profile"
+                  fill
+                  className="object-cover"
+                />
+                {loading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  </div>
+                )}
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity">
+                  <Icons.Camera />
+                </div>
+              </>
             ) : (
-              <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+              <div className="w-full h-full bg-gray-300 flex items-center justify-center group-hover:bg-gray-400 transition-colors">
                 <span className="text-xl text-gray-600">
-                  {session?.user?.name?.[0] || 'U'}
+                  {session?.user?.name?.[0] || "U"}
                 </span>
               </div>
             )}
@@ -296,26 +355,36 @@ const markAsRead = async (notificationId: string) => {
             <p className="text-sm font-medium text-gray-800">
               {session?.user?.name}
             </p>
-            <p className="text-xs text-gray-500">
-              {session?.user?.email}
-            </p>
+            <p className="text-xs text-gray-500">{session?.user?.email}</p>
           </div>
         </button>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileChange}
+        />
 
         {/* Dropdown Menu */}
         {isOpen && (
           <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
             <div className="px-4 py-2 border-b border-gray-200 md:hidden">
-              <p className="text-sm font-medium text-gray-900">{session?.user?.name}</p>
-              <p className="text-sm text-gray-500 truncate">{session?.user?.email}</p>
+              <p className="text-sm font-medium text-gray-900">
+                {session?.user?.name}
+              </p>
+              <p className="text-sm text-gray-500 truncate">
+                {session?.user?.email}
+              </p>
             </div>
 
             {menuItems.map((item, index) => (
               <button
                 key={index}
                 onClick={() => {
-                  item.onClick()
-                  setIsOpen(false)
+                  item.onClick();
+                  setIsOpen(false);
                 }}
                 className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
@@ -326,7 +395,7 @@ const markAsRead = async (notificationId: string) => {
 
             <div className="border-t border-gray-200">
               <button
-                onClick={() => signOut({ callbackUrl: '/login' })}
+                onClick={() => signOut({ callbackUrl: "/login" })}
                 className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
               >
                 <span className="mr-3 text-red-500">
@@ -339,5 +408,5 @@ const markAsRead = async (notificationId: string) => {
         )}
       </div>
     </div>
-  )
+  );
 }
