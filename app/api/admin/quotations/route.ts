@@ -7,7 +7,6 @@ import { QuotationStatus, Role } from "@prisma/client";
 
 export async function GET(request: Request) {
   try {
-    // Check authentication
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -18,13 +17,22 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Parse query parameters
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search") || "";
-    const status = searchParams.get("status") || "all";
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
-    const sortBy = searchParams.get("sortBy") || "createdAt";
+
+    // Parse and adjust dates to handle timezone issues
+    const startDate = searchParams.get("startDate")
+      ? new Date(searchParams.get("startDate")!)
+      : undefined;
+    let endDate = searchParams.get("endDate")
+      ? new Date(searchParams.get("endDate")!)
+      : undefined;
+
+    // Adjust end date to include the entire day
+    if (endDate) {
+      endDate = new Date(endDate.setHours(23, 59, 59, 999));
+    }
+
+    const sortBy = searchParams.get("sortBy") || "date";
     const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.max(1, parseInt(searchParams.get("limit") || "10"));
@@ -33,61 +41,40 @@ export async function GET(request: Request) {
     // Build where clause
     const where: any = {};
 
-    // Add search conditions
-    if (search) {
-      where.OR = [
-        { quotationNumber: { contains: search } },
-        {
-          user: {
-            OR: [
-              { name: { contains: search } },
-              { email: { contains: search } },
-            ],
-          },
-        },
-      ];
-    }
-
-    // Add status filter
-    if (status !== "all") {
-      where.status = status as QuotationStatus;
-    }
-
-    // Add date range filter
+    // Add date range filter if dates are provided
     if (startDate && endDate) {
-      try {
-        const startDateTime = new Date(startDate);
-        const endDateTime = new Date(endDate);
-
-        // Ensure valid dates
-        if (!isNaN(startDateTime.getTime()) && !isNaN(endDateTime.getTime())) {
-          where.createdAt = {
-            gte: startDateTime,
-            lte: endDateTime,
-          };
-        }
-      } catch (error) {
-        console.error("Date parsing error:", error);
-      }
+      where.createdAt = {
+        gte: startDate,
+        lte: endDate,
+      };
     }
 
-    // Validate sort field
-    const validSortFields = [
-      "createdAt",
-      "quotationNumber",
-      "totalAmount",
-      "status",
-      "updatedAt",
-    ];
-    const finalSortBy = validSortFields.includes(sortBy) ? sortBy : "createdAt";
+    // Debug log
+    console.log("Query parameters:", {
+      startDate,
+      endDate,
+      sortBy,
+      sortOrder,
+      page,
+      limit,
+      skip,
+      where,
+    });
+
+    // First, let's check if we have any quotations at all
+    const totalQuotations = await prisma.quotation.count();
+    console.log("Total quotations in database:", totalQuotations);
+
+    // Now let's check how many match our where clause
+    const matchingQuotations = await prisma.quotation.count({ where });
+    console.log("Matching quotations:", matchingQuotations);
 
     try {
-      // Execute queries
       const [quotations, total] = await Promise.all([
         prisma.quotation.findMany({
           where,
           orderBy: {
-            [finalSortBy]: sortOrder,
+            createdAt: sortOrder,
           },
           skip,
           take: limit,
@@ -124,7 +111,16 @@ export async function GET(request: Request) {
         prisma.quotation.count({ where }),
       ]);
 
-      // Return response
+      console.log("Query results:", {
+        quotationsFound: quotations.length,
+        totalCount: total,
+        pagination: {
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+
       return NextResponse.json({
         success: true,
         quotations,

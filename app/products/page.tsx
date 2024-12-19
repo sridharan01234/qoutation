@@ -1,31 +1,23 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { FaSearch, FaShoppingCart, FaFilter } from "react-icons/fa";
+import { FaSearch, FaFilter } from "react-icons/fa";
+import ProductGridItem from "../components/ProductGridItem";
 import { motion } from "framer-motion";
 import { useCart } from "../context/CartContext";
 
 interface Product {
   id: string;
   name: string;
-  image: string;
-  price: number;
   description: string;
+  price: number;
+  image: string | null;
+  status: "IN_STOCK" | "OUT_OF_STOCK" | "LOW_STOCK";
   stock: number;
-  category: string;
-  createdAt: Date;
-  updatedAt: Date;
-  status: string;
-  tags: string[];
   sku: string;
-  weight: number;
-  dimensions: {
-    length: number;
-    width: number;
-    height: number;
+  category: {
+    name: string;
   };
-  featured: boolean;
 }
 
 export default function CustomerProductsPage() {
@@ -67,48 +59,62 @@ export default function CustomerProductsPage() {
     filterProducts();
   }, [searchQuery, selectedCategory, products]);
 
-  const filterProducts = () => {
-    let filtered = [...products];
+// Update your fetchProducts function
+const fetchProducts = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+    const response = await fetch("/api/products");
 
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (product) =>
-          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
     }
 
-    // Category filter
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter(
-        (product) => product.category.name === selectedCategory
-      );
+    const result = await response.json();
+    
+    if (result.success && Array.isArray(result.data)) {
+      setProducts(result.data);
+      setFilteredProducts(result.data);
+    } else {
+      throw new Error('Invalid data format received from API');
     }
+  } catch (err) {
+    console.error("Error fetching products:", err);
+    setError("Failed to load products. Please try again.");
+    setProducts([]);
+    setFilteredProducts([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
-    setFilteredProducts(filtered);
-  };
+// Update your filterProducts function
+const filterProducts = () => {
+  if (!Array.isArray(products)) return;
+  
+  let filtered = [...products];
 
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await fetch("/api/products");
+  // Search filter
+  if (searchQuery) {
+    filtered = filtered.filter(
+      (product) =>
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }
 
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
+  // Category filter
+  if (selectedCategory !== "all") {
+    filtered = filtered.filter(
+      (product) => product.category.name === selectedCategory
+    );
+  }
 
-      const data = await response.json();
-      setProducts(data.data);
-      setFilteredProducts(data.data);
-    } catch (err) {
-      console.error("Error fetching products:", err);
-      setError("Failed to load products. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Apply sorting
+  filtered = sortProducts(filtered);
+  setFilteredProducts(filtered);
+};
+  
 
   if (loading) {
     return (
@@ -137,7 +143,6 @@ export default function CustomerProductsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         {/* Search and Filters */}
@@ -181,7 +186,7 @@ export default function CustomerProductsPage() {
         </div>
 
         {/* Products Grid */}
-        {filteredProducts.length === 0 ? (
+        {!filteredProducts || filteredProducts.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-gray-400 text-xl mb-4">No products found</div>
             <button
@@ -197,70 +202,12 @@ export default function CustomerProductsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {sortProducts(filteredProducts).map((product) => (
-              <motion.div
+              <ProductGridItem
                 key={product.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                whileHover={{ y: -5 }}
-                transition={{ duration: 0.3 }}
-                onClick={() => navigateToProduct(product.id)}
-                className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
-              >
-                <div className="relative aspect-square">
-                  {product.image && (
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                    />
-                  )}
-                  {product.status !== "IN_STOCK" && (
-                    <div className="absolute top-2 right-2 bg-red-500 text-white text-sm px-3 py-1 rounded-full">
-                      {product.status === "OUT_OF_STOCK"
-                        ? "Out of Stock"
-                        : "Low Stock"}
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-6">
-                  <div className="mb-2">
-                    <span className="text-sm text-blue-600 font-medium">
-                      {product.category.name}
-                    </span>
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {product.name}
-                  </h3>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                    {product.description}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xl font-bold text-gray-900">
-                      {new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                      }).format(product.price)}
-                    </span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        addToCart(product);
-                      }}
-                      disabled={product.status === "OUT_OF_STOCK"}
-                      className={`p-2 rounded-full ${
-                        product.status === "IN_STOCK"
-                          ? "bg-blue-600 hover:bg-blue-700 text-white"
-                          : "bg-gray-200 cursor-not-allowed text-gray-400"
-                      }`}
-                    >
-                      <FaShoppingCart className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
+                product={product}
+                onNavigate={navigateToProduct}
+                onAddToCart={addToCart}
+              />
             ))}
           </div>
         )}

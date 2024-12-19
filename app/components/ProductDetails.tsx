@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useCart } from "../context/CartContext";
 
 interface ProductTag {
   id: string;
@@ -39,6 +40,12 @@ export default function ProductDetails() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { cart, addToCart, removeFromCart, getCartTotal } = useCart();
+  
+  const onAddToCart = (product: any) => {
+    addToCart(product);
+  }
+
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -268,7 +275,7 @@ export default function ProductDetails() {
                 </div>
 
                 {/* Tags */}
-                {product.tags.length > 0 && (
+                {product.productTags.length > 0 && (
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900 mb-3">
                       Tags
@@ -295,7 +302,10 @@ export default function ProductDetails() {
                           ? "bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-blue-500/25"
                           : "bg-gray-400 cursor-not-allowed"
                       }`}
-                    disabled={product.status !== "IN_STOCK"}
+                    disabled={product.status !== "IN_STOCK"}             onClick={(e) => {
+                      e.stopPropagation();
+                      onAddToCart(product);
+                    }}
                   >
                     {product.status === "IN_STOCK"
                       ? "Add to Cart"

@@ -1,236 +1,229 @@
 "use client";
-import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-
-interface ProductTag {
-  id: string;
-  name: string;
-}
+import ProductGridItem from "../components/ProductGridItem";
 
 interface Product {
   id: string;
   name: string;
-  description: string | null;
+  description: string;
   categoryId: string;
   price: number;
   stock: number;
   sku: string;
   image: string | null;
-  status: "IN_STOCK" | "OUT_OF_STOCK" | "LOW_STOCK";
-  weight: number | null;
-  dimensions: {
-    length?: number;
-    width?: number;
-    height?: number;
-  } | null;
+  status: string;
+  weight: string;
+  dimensions: string;
   createdAt: string;
   updatedAt: string;
   category: {
     id: string;
     name: string;
   };
-  tags: ProductTag[];
+  productTags: Array<{
+    tag: {
+      id: string;
+      name: string;
+    };
+    assignedAt: string;
+  }>;
 }
 
-export default function FeaturedProducts() {
-  const router = useRouter();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const productsPerSlide = 3;
+interface FeaturedProductsProps {
+  productsPerSlide?: number;
+  addToCart: (product: Product) => void;
+}
 
+export default function FeaturedProducts({ 
+  productsPerSlide = 4,
+  addToCart 
+}: FeaturedProductsProps) {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  // Fetch featured products
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchFeaturedProducts = async () => {
       try {
-        const response = await fetch("/api/products?featured=true");
+        const response = await fetch('/api/products?featured=true');
         if (!response.ok) {
-          throw new Error("Failed to fetch products");
+          throw new Error('Failed to fetch products');
         }
         const data = await response.json();
-        setProducts(data.data);
+        if (data.success && Array.isArray(data.data)) {
+          setProducts(data.data);
+        } else {
+          throw new Error('Invalid data format');
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
+        setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchFeaturedProducts();
   }, []);
 
   const nextSlide = () => {
-    setCurrentIndex(
-      (prevIndex) => (prevIndex + productsPerSlide) % products.length
+    if (isAnimating || products.length <= productsPerSlide) return;
+    setIsAnimating(true);
+    setCurrentIndex((prevIndex) => 
+      prevIndex + productsPerSlide >= products.length ? 0 : prevIndex + productsPerSlide
     );
   };
 
-  const prevSlide = () => {
-    setCurrentIndex(
-      (prevIndex) =>
-        (prevIndex - productsPerSlide + products.length) % products.length
-    );
-  };
-
-  const handleProductClick = (productId: string, e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest("button")) return;
+  const navigateToProduct = (productId: string) => {
     router.push(`/products/${productId}`);
   };
 
-  useEffect(() => {
-    const timer = setInterval(nextSlide, 5000);
-    return () => clearInterval(timer);
-  }, [products.length]);
+  const prevSlide = () => {
+    if (isAnimating || products.length <= productsPerSlide) return;
+    setIsAnimating(true);
+    setCurrentIndex((prevIndex) => 
+      prevIndex - productsPerSlide < 0 
+        ? Math.max(0, products.length - productsPerSlide) 
+        : prevIndex - productsPerSlide
+    );
+  };
 
-  if (loading) {
+  useEffect(() => {
+    if (products.length <= productsPerSlide) return;
+    
+    const timer = setInterval(() => {
+      nextSlide();
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [currentIndex, products.length, productsPerSlide]);
+
+  const handleTransitionEnd = () => {
+    setIsAnimating(false);
+  };
+
+  if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="py-16 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
       </div>
     );
   }
 
   if (error) {
-    return <div className="text-center text-red-500 py-8">Error: {error}</div>;
+    return (
+      <div className="py-16 text-center text-red-500">
+        {error}
+      </div>
+    );
   }
 
   if (products.length === 0) {
     return (
-      <div className="text-center py-8">No featured products available.</div>
+      <div className="py-16 text-center text-gray-500">
+        No featured products available
+      </div>
     );
   }
 
   return (
-    <section className="py-16">
+    <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
       <div className="container mx-auto px-4">
-        <h2 className="mb-12 text-center text-3xl font-bold">
+        <h2 className="mb-12 text-center text-4xl font-bold text-gray-800">
           Featured Products
+          <div className="mt-2 h-1 w-24 bg-blue-500 mx-auto rounded-full"></div>
         </h2>
-        <div className="relative">
-          <button
-            onClick={prevSlide}
-            className="absolute left-0 top-1/2 z-10 -translate-y-1/2 bg-white/80 p-3 rounded-full shadow-md hover:bg-white hover:shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Previous Slide"
-            disabled={products.length <= productsPerSlide}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-          <div className="overflow-hidden">
+        
+        <div className="relative group">
+          {products.length > productsPerSlide && (
+            <>
+              <button
+                onClick={prevSlide}
+                className="absolute left-0 top-1/2 z-10 -translate-y-1/2 
+                         bg-white/90 p-4 rounded-full shadow-lg
+                         hover:bg-blue-500 hover:text-white
+                         transition-all duration-300 ease-in-out
+                         opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-2
+                         focus:outline-none focus:ring-2 focus:ring-blue-500
+                         disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Previous Slide"
+                disabled={currentIndex === 0}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+
+              <button
+                onClick={nextSlide}
+                className="absolute right-0 top-1/2 z-10 -translate-y-1/2
+                         bg-white/90 p-4 rounded-full shadow-lg
+                         hover:bg-blue-500 hover:text-white
+                         transition-all duration-300 ease-in-out
+                         opacity-0 group-hover:opacity-100 translate-x-4 group-hover:-translate-x-2
+                         focus:outline-none focus:ring-2 focus:ring-blue-500
+                         disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Next Slide"
+                disabled={currentIndex + productsPerSlide >= products.length}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            </>
+          )}
+
+          <div className="overflow-hidden rounded-xl shadow-lg">
             <div
-              className="flex transition-transform duration-500 ease-in-out"
+              className="flex transition-transform duration-700 ease-out"
               style={{
-                transform: `translateX(-${
-                  (currentIndex / products.length) * 100
-                }%)`,
+                transform: `translateX(-${(currentIndex * 100) / productsPerSlide}%)`,
+                gap: '1rem',
+                padding: '1rem'
               }}
+              onTransitionEnd={handleTransitionEnd}
             >
-              {products.map((product, index) => (
+              {products.map((product) => (
                 <div
                   key={product.id}
-                  className="flex-shrink-0 w-full md:w-1/3 px-2"
-                  style={{
-                    display:
-                      index >= currentIndex &&
-                      index < currentIndex + productsPerSlide
-                        ? "block"
-                        : "none",
-                  }}
-                  onClick={(e) => handleProductClick(product.id, e)}
+                  className="flex-shrink-0"
+                  style={{ width: `calc(${100 / productsPerSlide}% - 1rem)` }}
                 >
-                  <div className="group relative overflow-hidden rounded-xl bg-white shadow-lg transition-all hover:shadow-xl cursor-pointer">
-                    <div className="relative aspect-square w-full overflow-hidden">
-                      {product.image && (
-                        <Image
-                          src={product.image}
-                          alt={product.name}
-                          fill
-                          className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                      )}
-                      {product.status !== "IN_STOCK" && (
-                        <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-md text-sm">
-                          {product.status === "OUT_OF_STOCK"
-                            ? "Out of Stock"
-                            : "Low Stock"}
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <h3 className="mb-2 text-xl font-semibold">
-                        {product.name}
-                      </h3>
-                      <p className="mb-3 text-gray-600 line-clamp-2">
-                        {product.description}
-                      </p>
-                      <div className="flex justify-between items-center">
-                        <p className="text-lg font-bold text-gray-900">
-                          {new Intl.NumberFormat("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                          }).format(product.price)}
-                        </p>
-                        <span className="text-sm text-gray-500">
-                          SKU: {product.sku}
-                        </span>
-                      </div>
-                      <div className="mt-2">
-                        <div className="text-sm text-gray-500">
-                          Category: {product.category.name}
-                        </div>
-                        {product.tags.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {product.tags.map((tag) => (
-                              <span
-                                key={tag.id}
-                                className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full"
-                              >
-                                {tag.name}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  <ProductGridItem
+                    product={product}
+                    onNavigate={() => navigateToProduct(product.id)}
+                    onAddToCart={() => addToCart(product)}
+                  />
                 </div>
               ))}
             </div>
           </div>
-          <button
-            onClick={nextSlide}
-            className="absolute right-0 top-1/2 z-10 -translate-y-1/2 bg-white/80 p-3 rounded-full shadow-md hover:bg-white hover:shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Next Slide"
-            disabled={products.length <= productsPerSlide}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </button>
         </div>
       </div>
     </section>
