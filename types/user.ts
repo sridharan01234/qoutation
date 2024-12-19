@@ -1,27 +1,35 @@
-export interface UserProfile {
+export type UserProfile = {
   id: string;
-  firstName?: string;
-  lastName?: string;
+  name: string;
   email: string;
-  image?: string;
-  phoneNumber?: string;
-  dateOfBirth?: string;
-  gender?: "MALE" | "FEMALE" | "OTHER";
-  company?: string;
-  jobTitle?: string;
-  department?: string;
-  linkedinUrl?: string;
-  websiteUrl?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  postalCode?: string;
+  emailVerified: string;
+  password: string;
+  image: string | null;
+  role: "ADMIN" | "USER"
+  isActive: boolean;
+  firstName: string | null;
+  lastName: string | null;
+  displayName: string | null;
+  gender: string | null;
+  dateOfBirth: string | null;
+  phoneNumber: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  postalCode: string | null;
+  company: string | null;
+  jobTitle: string | null;
+  department: string | null;
   language: string;
   timezone: string;
   currency: string;
   emailNotifications: boolean;
   smsNotifications: boolean;
-  role: string;
-  isActive: boolean;
-}
+  linkedinUrl: string | null;
+  twitterUrl: string | null;
+  websiteUrl: string | null;
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
