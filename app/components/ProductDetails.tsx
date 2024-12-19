@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 
 interface ProductTag {
   id: string;
@@ -91,15 +92,15 @@ export default function ProductDetails() {
         <nav className="mb-8">
           <ol className="flex items-center space-x-2 text-sm text-gray-500">
             <li>
-              <a href="/" className="hover:text-blue-600">
+              <Link href="/" className="hover:text-blue-600">
                 Home
-              </a>
+              </Link>
             </li>
             <li>→</li>
             <li>
-              <a href="/products" className="hover:text-blue-600">
+              <Link href="/products" className="hover:text-blue-600">
                 Products
-              </a>
+              </Link>
             </li>
             <li>→</li>
             <li className="text-gray-900 font-medium">{product.name}</li>
