@@ -84,7 +84,7 @@ const CustomersOverview = () => {
 
   // Sorting and Filtering Logic
   const sortedAndFilteredUsers = React.useMemo(() => {
-    let filteredUsers = users.filter((user) => {
+    const filteredUsers = users.filter((user) => {
       const searchFields = [
         user.name,
         user.email,
