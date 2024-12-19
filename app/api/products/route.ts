@@ -57,21 +57,19 @@ export async function GET(request: Request) {
       },
     });
 
-    // Transform the response to flatten the tag structure
-    const transformedProducts = products.map((product) => ({
-      ...product,
-      tags: product.productTags.map((pt) => ({
-        ...pt.tag,
-        assignedAt: pt.assignedAt,
-      })),
-      productTags: undefined, // Remove the nested productTags from the response
-    }));
+    // Return the response with proper structure
+    return NextResponse.json({
+      success: true,
+      data: products
+    });
 
-    return NextResponse.json(transformedProducts);
   } catch (error) {
-    console.error("Error fetching products:", error);
+    console.error('Error fetching products:', error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { 
+        success: false, 
+        error: 'Failed to fetch products' 
+      },
       { status: 500 }
     );
   }

@@ -1,5 +1,5 @@
 // services/api.js
-const API_URL = 'https://dummyjson.com/products'; // Example using dummyJSON API
+const API_URL = '/api/products'; // Example using dummyJSON API
 
 export const fetchProducts = async () => {
   try {

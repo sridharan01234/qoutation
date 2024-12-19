@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
 
     // Parse and adjust dates to handle timezone issues
-    let startDate = searchParams.get("startDate")
+    const startDate = searchParams.get("startDate")
       ? new Date(searchParams.get("startDate")!)
       : undefined;
     let endDate = searchParams.get("endDate")
