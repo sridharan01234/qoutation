@@ -1,5 +1,6 @@
-import { Fragment } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
+import type { UserProfile } from "../../types/user";
 import {
   FiX,
   FiUser,
@@ -11,12 +12,13 @@ import {
 import { format } from "date-fns";
 
 interface UserModalProps {
-  user: any;
+  user: UserProfile;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function UserModal({ user, isOpen, onClose }: UserModalProps) {
+
+export default function UserModal({ user, isOpen, onClose }: UserModalProps) {  
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
