@@ -99,11 +99,13 @@ model User {
 
 model VerificationToken {
   identifier String
-  token      String   @unique
+  token      String
   expires    DateTime
 
-  @@unique([identifier, token])
+  @@id([identifier, token])
+  @@unique([token])         
 }
+
 
 model Category {
   id        String    @id @default(cuid())
@@ -130,7 +132,7 @@ model Product {
   updatedAt      DateTime        @updatedAt
   category       Category        @relation(fields: [categoryId], references: [id])
   quotationItems QuotationItem[]
-  tags           ProductTag[]    @relation("ProductToProductTag")
+  productTags    ProductsOnTags[]
 
   @@index([categoryId])
   @@index([status])
@@ -138,10 +140,23 @@ model Product {
 }
 
 model ProductTag {
-  id       String    @id @default(cuid())
-  name     String
-  products Product[] @relation("ProductToProductTag")
+  id          String           @id @default(cuid())
+  name        String
+  productsOn  ProductsOnTags[]
 }
+
+model ProductsOnTags {
+  id          String     @id @default(cuid())
+  productId   String
+  tagId       String
+  product     Product    @relation(fields: [productId], references: [id])
+  tag         ProductTag @relation(fields: [tagId], references: [id])
+  assignedAt  DateTime   @default(now())
+
+  @@unique([productId, tagId])
+  @@index([tagId])
+}
+
 
 model Quotation {
   id              String          @id @default(cuid())

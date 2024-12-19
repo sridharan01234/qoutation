@@ -40,6 +40,29 @@ CREATE TABLE `User` (
     `image` VARCHAR(191) NULL,
     `role` ENUM('ADMIN', 'MANAGER', 'USER') NOT NULL DEFAULT 'USER',
     `isActive` BOOLEAN NOT NULL DEFAULT true,
+    `firstName` VARCHAR(191) NULL,
+    `lastName` VARCHAR(191) NULL,
+    `displayName` VARCHAR(191) NULL,
+    `gender` ENUM('MALE', 'FEMALE', 'OTHER') NULL,
+    `dateOfBirth` DATETIME(3) NULL,
+    `phoneNumber` VARCHAR(191) NULL,
+    `address` VARCHAR(191) NULL,
+    `city` VARCHAR(191) NULL,
+    `state` VARCHAR(191) NULL,
+    `country` VARCHAR(191) NULL,
+    `postalCode` VARCHAR(191) NULL,
+    `company` VARCHAR(191) NULL,
+    `jobTitle` VARCHAR(191) NULL,
+    `department` VARCHAR(191) NULL,
+    `language` VARCHAR(191) NULL DEFAULT 'en',
+    `timezone` VARCHAR(191) NULL DEFAULT 'UTC',
+    `currency` VARCHAR(191) NULL DEFAULT 'USD',
+    `emailNotifications` BOOLEAN NOT NULL DEFAULT true,
+    `smsNotifications` BOOLEAN NOT NULL DEFAULT false,
+    `linkedinUrl` VARCHAR(191) NULL,
+    `twitterUrl` VARCHAR(191) NULL,
+    `websiteUrl` VARCHAR(191) NULL,
+    `lastLoginAt` DATETIME(3) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -54,7 +77,7 @@ CREATE TABLE `VerificationToken` (
     `expires` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `VerificationToken_token_key`(`token`),
-    UNIQUE INDEX `VerificationToken_identifier_token_key`(`identifier`, `token`)
+    PRIMARY KEY (`identifier`, `token`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
@@ -101,35 +124,14 @@ CREATE TABLE `ProductTag` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Customer` (
+CREATE TABLE `ProductsOnTags` (
     `id` VARCHAR(191) NOT NULL,
-    `userId` VARCHAR(191) NULL,
-    `name` VARCHAR(191) NOT NULL,
-    `company` VARCHAR(191) NULL,
-    `email` VARCHAR(191) NOT NULL,
-    `phone` VARCHAR(191) NULL,
-    `taxId` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
-    `notes` TEXT NULL,
-    `isActive` BOOLEAN NOT NULL DEFAULT true,
+    `productId` VARCHAR(191) NOT NULL,
+    `tagId` VARCHAR(191) NOT NULL,
+    `assignedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
-    UNIQUE INDEX `Customer_userId_key`(`userId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `Address` (
-    `id` VARCHAR(191) NOT NULL,
-    `customerId` VARCHAR(191) NOT NULL,
-    `street` VARCHAR(191) NOT NULL,
-    `city` VARCHAR(191) NOT NULL,
-    `state` VARCHAR(191) NULL,
-    `postalCode` VARCHAR(191) NULL,
-    `country` VARCHAR(191) NOT NULL,
-    `isDefault` BOOLEAN NOT NULL DEFAULT true,
-
-    UNIQUE INDEX `Address_customerId_key`(`customerId`),
+    INDEX `ProductsOnTags_tagId_idx`(`tagId`),
+    UNIQUE INDEX `ProductsOnTags_productId_tagId_key`(`productId`, `tagId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -137,7 +139,6 @@ CREATE TABLE `Address` (
 CREATE TABLE `Quotation` (
     `id` VARCHAR(191) NOT NULL,
     `quotationNumber` VARCHAR(191) NOT NULL,
-    `customerId` VARCHAR(191) NOT NULL,
     `userId` VARCHAR(191) NOT NULL,
     `date` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `validUntil` DATETIME(3) NOT NULL,
@@ -159,9 +160,10 @@ CREATE TABLE `Quotation` (
 
     UNIQUE INDEX `Quotation_quotationNumber_key`(`quotationNumber`),
     INDEX `Quotation_quotationNumber_idx`(`quotationNumber`),
-    INDEX `Quotation_customerId_idx`(`customerId`),
     INDEX `Quotation_userId_idx`(`userId`),
     INDEX `Quotation_status_idx`(`status`),
+    INDEX `Quotation_createdAt_idx`(`createdAt`),
+    INDEX `Quotation_date_idx`(`date`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -225,15 +227,6 @@ CREATE TABLE `Notification` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- CreateTable
-CREATE TABLE `_ProductToProductTag` (
-    `A` VARCHAR(191) NOT NULL,
-    `B` VARCHAR(191) NOT NULL,
-
-    UNIQUE INDEX `_ProductToProductTag_AB_unique`(`A`, `B`),
-    INDEX `_ProductToProductTag_B_index`(`B`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
 -- AddForeignKey
 ALTER TABLE `Account` ADD CONSTRAINT `Account_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -244,13 +237,10 @@ ALTER TABLE `Session` ADD CONSTRAINT `Session_userId_fkey` FOREIGN KEY (`userId`
 ALTER TABLE `Product` ADD CONSTRAINT `Product_categoryId_fkey` FOREIGN KEY (`categoryId`) REFERENCES `Category`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Customer` ADD CONSTRAINT `Customer_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `ProductsOnTags` ADD CONSTRAINT `ProductsOnTags_productId_fkey` FOREIGN KEY (`productId`) REFERENCES `Product`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Address` ADD CONSTRAINT `Address_customerId_fkey` FOREIGN KEY (`customerId`) REFERENCES `Customer`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Quotation` ADD CONSTRAINT `Quotation_customerId_fkey` FOREIGN KEY (`customerId`) REFERENCES `Customer`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `ProductsOnTags` ADD CONSTRAINT `ProductsOnTags_tagId_fkey` FOREIGN KEY (`tagId`) REFERENCES `ProductTag`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Quotation` ADD CONSTRAINT `Quotation_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -266,9 +256,3 @@ ALTER TABLE `Attachment` ADD CONSTRAINT `Attachment_quotationId_fkey` FOREIGN KE
 
 -- AddForeignKey
 ALTER TABLE `Activity` ADD CONSTRAINT `Activity_quotationId_fkey` FOREIGN KEY (`quotationId`) REFERENCES `Quotation`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `_ProductToProductTag` ADD CONSTRAINT `_ProductToProductTag_A_fkey` FOREIGN KEY (`A`) REFERENCES `Product`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `_ProductToProductTag` ADD CONSTRAINT `_ProductToProductTag_B_fkey` FOREIGN KEY (`B`) REFERENCES `ProductTag`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

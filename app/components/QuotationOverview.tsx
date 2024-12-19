@@ -111,50 +111,78 @@ export default function AdminQuotationOverview() {
   }, [status, session]);
 
   // components/QuotationOverview.tsx
-  const fetchQuotations = async () => {
-    try {
-      setLoading(true);
+const fetchQuotations = async () => {
+  try {
+    setLoading(true);
 
-      const response = await axios.get("/api/admin/quotations", {
-        params: {
-          search: searchQuery || undefined,
-          status: filterStatus === "all" ? undefined : filterStatus,
-          startDate: dateRange.startDate
-            ? format(dateRange.startDate, "yyyy-MM-dd")
-            : undefined,
-          endDate: dateRange.endDate
-            ? format(dateRange.endDate, "yyyy-MM-dd")
-            : undefined,
-          sortBy,
-          sortOrder,
-          page: pagination.page,
-          limit: pagination.limit,
-        },
-      });
+    // Format dates properly
+    const formattedStartDate = dateRange.startDate
+      ? format(new Date(dateRange.startDate), "yyyy-MM-dd")
+      : undefined;
+    const formattedEndDate = dateRange.endDate
+      ? format(new Date(dateRange.endDate), "yyyy-MM-dd")
+      : undefined;
 
-      if (response.data.success) {
-        setQuotations(response.data.quotations);
-        setPagination(response.data.pagination);
-      } else {
-        throw new Error(response.data.error || "Failed to fetch quotations");
-      }
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.error ||
-        error.message ||
-        "An unexpected error occurred";
+    // Map frontend sort fields to backend fields
+    const sortFieldMapping: Record<string, string> = {
+      date: "createdAt",
+      number: "quotationNumber",
+      amount: "totalAmount",
+      status: "status",
+    };
 
-      console.error("Error fetching quotations:", error);
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
+    const finalSortBy = sortFieldMapping[sortBy] || "createdAt";
+
+    const response = await axios.get("/api/admin/quotations", {
+      params: {
+        search: searchQuery || undefined,
+        status: filterStatus === "all" ? undefined : filterStatus,
+        startDate: formattedStartDate,
+        endDate: formattedEndDate,
+        sortBy: finalSortBy,
+        sortOrder,
+        page: pagination.page,
+        limit: pagination.limit,
+      },
+    });
+
+    if (response.data.success) {
+      setQuotations(response.data.quotations);
+      setPagination(response.data.pagination);
+    } else {
+      throw new Error(response.data.error || "Failed to fetch quotations");
     }
-  };
+  } catch (error: any) {
+    const errorMessage =
+      error.response?.data?.error ||
+      error.message ||
+      "An unexpected error occurred";
+    console.error("Error fetching quotations:", error);
+    toast.error(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const handleSort = (key: string) => {
-    setSortOrder(sortBy === key && sortOrder === "asc" ? "desc" : "asc");
-    setSortBy(key);
-  };
+const handleSort = (key: string) => {
+  const newOrder = sortBy === key && sortOrder === "asc" ? "desc" : "asc";
+  setSortOrder(newOrder);
+  setSortBy(key);
+  // Reset to first page when sorting changes
+  setPagination((prev) => ({ ...prev, page: 1 }));
+};
+
+// Add a handle page change function
+const handlePageChange = (newPage: number) => {
+  setPagination((prev) => ({ ...prev, page: newPage }));
+};
+
+// Add useEffect to fetch data when sorting or pagination changes
+useEffect(() => {
+  if (status === "authenticated" && session?.user?.role === "ADMIN") {
+    fetchQuotations();
+  }
+}, [sortBy, sortOrder, pagination.page, filterStatus, dateRange, searchQuery]);
 
   const getStatusStyle = (status: QuotationStatus) => {
     switch (status) {
