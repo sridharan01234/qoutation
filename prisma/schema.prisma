@@ -157,7 +157,6 @@ model ProductsOnTags {
   @@index([tagId])
 }
 
-
 model Quotation {
   id              String          @id @default(cuid())
   quotationNumber String          @unique

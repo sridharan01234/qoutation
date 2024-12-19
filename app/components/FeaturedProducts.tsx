@@ -191,7 +191,7 @@ export default function FeaturedProducts() {
                         <div className="text-sm text-gray-500">
                           Category: {product.category.name}
                         </div>
-                        {product.tags.length > 0 && (
+                        {product.ProductTags.length > 0 && (
                           <div className="mt-2 flex flex-wrap gap-1">
                             {product.tags.map((tag) => (
                               <span
