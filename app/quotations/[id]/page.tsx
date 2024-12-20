@@ -122,7 +122,7 @@ export default function QuotationPage({ params }: { params: { id: string } }) {
                 Quotation #{quotation.quotationNumber}
               </h1>
               <p className="text-sm text-gray-500 mt-1">
-                Created by {quotation.user.name || quotation.user.email}
+                Created by {quotation.creator.name || quotation.creator.email}
               </p>
             </div>
             <div className="text-right">

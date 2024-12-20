@@ -1,0 +1,84 @@
+import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../../../lib/auth'
+import { prisma } from '../../../lib/prisma';
+
+// Define the connections map if not already defined
+const connections = new Map();
+
+export async function GET(request: Request) {
+  try {
+    const headersList = headers();
+    const accept = headersList.get('accept');
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.email) {
+      return new NextResponse('Unauthorized', { 
+        status: 401,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        }
+      });
+    }
+
+    if (accept === 'text/event-stream') {
+      const stream = new TransformStream();
+      const writer = stream.writable.getWriter();
+      const encoder = new TextEncoder();
+      const userId = session.user.id;
+
+      // Send initial connection message
+      await writer.write(encoder.encode('data: {"type":"connected"}\n\n'));
+
+      // Setup heartbeat interval
+      const heartbeatInterval = setInterval(async () => {
+        try {
+          await writer.write(encoder.encode('data: {"type":"heartbeat"}\n\n'));
+        } catch (error) {
+          console.error('Heartbeat error:', error);
+          clearInterval(heartbeatInterval);
+          connections.delete(userId);
+          writer.close().catch(console.error);
+        }
+      }, 30000);
+
+      // Store the connection
+      connections.set(userId, writer);
+
+      // Clean up on connection close
+      request.signal.addEventListener('abort', () => {
+        clearInterval(heartbeatInterval);
+        connections.delete(userId);
+        writer.close().catch(console.error);
+      });
+
+      // Return the SSE response
+      return new Response(stream.readable, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    }
+
+    return new NextResponse('Accepted header must be text/event-stream', { status: 400 });
+  } catch (error) {
+    console.error('SSE error:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}

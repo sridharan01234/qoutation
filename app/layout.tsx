@@ -1,14 +1,11 @@
-"use client"
-import type { Metadata } from "next";
+"use client";
 import "./globals.css";
 import { Inter, Poppins, Playfair_Display } from "next/font/google";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import "react-toastify/dist/ReactToastify.css";
 import CustomerLayout from "./components/layouts/CustomerLayout";
-import { ToastContainer } from "react-toastify";
-import { CartProvider } from "./context/CartContext";
-import { SessionProvider } from "next-auth/react";
+import AppProviders from "./providers/AppProviders";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -40,14 +37,9 @@ export default function RootLayout({
       className={`${inter.variable} ${poppins.variable} ${playfair.variable}`}
     >
       <body className={`font-inter antialiased bg-gray-50`}>
-        <SessionProvider>
-        <CartProvider>
-          <CustomerLayout>
-            <ToastContainer position="top-right" autoClose={3000} />
-            {children}
-          </CustomerLayout>
-      </CartProvider>
-      </SessionProvider>
+        <AppProviders>
+          <CustomerLayout>{children}</CustomerLayout>
+        </AppProviders>
       </body>
     </html>
   );

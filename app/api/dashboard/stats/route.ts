@@ -57,7 +57,7 @@ export async function GET() {
           createdAt: "desc",
         },
         include: {
-          user: {
+          creator: {
             select: {
               name: true,
               email: true,
@@ -192,7 +192,7 @@ export async function GET() {
         status: q.status,
         totalAmount: q.totalAmount,
         currency: q.currency,
-        user: q.user,
+        creator: q.creator,
         itemCount: q.items.length,
         recentActivities: q.activities,
       })),

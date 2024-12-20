@@ -63,7 +63,7 @@ export async function GET(request: Request) {
           },
         },
         attachments: true,
-        user: {
+        creator: {
           select: {
             name: true,
             email: true,
@@ -179,7 +179,6 @@ export async function POST(request: Request) {
               product: true,
             },
           },
-          user: true,
         },
       });
 

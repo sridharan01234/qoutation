@@ -1,4 +1,4 @@
-// lib/auth.ts
+
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -6,6 +6,9 @@ import { prisma } from "./prisma";
 import { compare } from "bcrypt";
 import { Role } from "@prisma/client";
 
+/**
+ * Configuration options for NextAuth authentication
+ */
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   secret: process.env.NEXTAUTH_SECRET,
@@ -38,7 +41,7 @@ export const authOptions: NextAuthOptions = {
             name: true,
             password: true,
             role: true,
-            image: true, // Add image to selected fields
+            image: true,
           },
         });
 
@@ -60,7 +63,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
-          image: user.image, // Include image in returned user object
+          image: user.image,
         };
       },
     }),

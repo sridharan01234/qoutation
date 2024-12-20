@@ -77,15 +77,6 @@ export interface Attachment {
   uploadedAt: Date;
 }
 
-export interface Activity {
-  id: string;
-  quotationId: string;
-  userId: string;
-  type: string;
-  description: string;
-  createdAt: Date;
-}
-
 export interface Quotation {
   id: string;
   quotationNumber: string;
@@ -118,16 +109,27 @@ export interface Quotation {
   attachments: Attachment[];
 }
 
-export interface PaginationData {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
 export interface QuotationsResponse {
   success: boolean;
   quotations: Quotation[];
   pagination: PaginationData;
   error?: string;
+}
+
+export interface Activity {
+  id: string;
+  type: string;
+  description: string;
+  createdAt: Date;
+  user: {
+    name: string | null;
+    email: string;
+  };
+}
+
+export interface PaginationData {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }

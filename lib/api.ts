@@ -1,4 +1,4 @@
-// lib/api.ts
+
 import { Product } from "../types/type";
 import  {prisma as db}  from "./db"; // Your database configuration
 

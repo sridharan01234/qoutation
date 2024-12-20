@@ -58,7 +58,7 @@ interface DashboardStats {
     status: QuotationStatus;
     totalAmount: number;
     currency: string;
-    user: {
+    creator: {
       name: string | null;
       email: string;
     };
@@ -322,7 +322,7 @@ export default function AdminDashboard() {
                       {quotation.quotationNumber}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {quotation.user.name || quotation.user.email}
+                      {quotation.creator.name || quotation.creator.email}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(quotation.date).toLocaleDateString()}

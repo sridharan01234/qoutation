@@ -1,4 +1,3 @@
-// app/api/products/[id]/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/prisma'
 
@@ -8,7 +7,6 @@ interface Params {
   }
 }
 
-// GET single product
 export async function GET(request: Request, { params }: Params) {
   try {
     const product = await prisma.product.findUnique({
@@ -94,7 +92,6 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 }
 
-// DELETE product
 export async function DELETE(request: Request, { params }: Params) {
   try {
     await prisma.product.delete({
@@ -109,6 +106,33 @@ export async function DELETE(request: Request, { params }: Params) {
     )
   } catch (error) {
     console.error('Error deleting product:', error)
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PUT(request: Request, { params }: Params) {
+  try {
+    const body = await request.json()
+    const { status } = body
+
+    const product = await prisma.product.update({
+      where: {
+        id: params.id
+      },
+      data: {
+        status
+      },
+      include: {
+        category: true,
+      }
+    })
+
+    return NextResponse.json({ data: product })
+  } catch (error) {
+    console.error('Error updating product status:', error)
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }
