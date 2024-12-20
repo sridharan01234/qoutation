@@ -1,13 +1,22 @@
 // components/UserMenu.tsx
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { signOut, useSession } from 'next-auth/react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-toastify'
 import Avatar from './Avatar'
-
+import {
+  UserCircleIcon as Profile,
+  ShieldCheckIcon as Admin,
+  BellIcon as Notifications,
+  CameraIcon as Camera,
+  ChevronDownIcon as ChevronDown,
+  XMarkIcon as X,
+  Bars3Icon as Menu,
+  ArrowRightOnRectangleIcon as SignOut,
+} from '@heroicons/react/24/outline';
 interface Notification {
   id: string;
   title: string;
@@ -15,6 +24,19 @@ interface Notification {
   createdAt: string;
   read: boolean;
 }
+
+// Add these styles to handle mobile touch events
+const mobileMenuStyles = {
+  container: `fixed top-0 right-0 w-full md:w-auto md:relative 
+              bg-white dark:bg-gray-800 shadow-lg md:shadow-none
+              transition-transform duration-200 ease-in-out
+              transform translate-y-0 md:translate-y-0`,
+  overlay: `fixed inset-0 bg-black bg-opacity-50 md:hidden`,
+  menuItem: `px-4 py-3 flex items-center space-x-3 hover:bg-gray-100 
+             dark:hover:bg-gray-700 cursor-pointer
+             border-b border-gray-200 dark:border-gray-700
+             last:border-b-0`
+};
 
 // Icons component
 const Icons = {
@@ -73,6 +95,13 @@ export default function UserMenu() {
   // Fetch initial notifications and setup SSE
   useEffect(() => {
     if (session?.user) {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+          setIsOpen(false);
+          setShowNotifications(false);
+        }};
+        document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
       fetchNotifications();
       const cleanup = setupSSE();
       return () => {
@@ -210,6 +239,11 @@ export default function UserMenu() {
     }
   };
 
+  const handleMenuToggle = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent event bubbling
+    setIsOpen(!isOpen);
+  };
+
   const markAsRead = async (notificationId: string) => {
     try {
       const response = await fetch(`/api/notifications/${notificationId}`, {
@@ -317,47 +351,69 @@ export default function UserMenu() {
       </div>
 
       {/* User Menu */}
-      <div className="relative" ref={menuRef}>
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center space-x-3 focus:outline-none"
+      <div className="relative">
+      <button
+        onClick={handleMenuToggle}
+        className="flex items-center space-x-3 focus:outline-none w-full"
+      >
+        {/* Avatar Section */}
+        <div 
+          className="relative w-10 h-10 rounded-full overflow-hidden group cursor-pointer"
+          onClick={handleAvatarClick}
         >
-          <div
-            className="relative w-10 h-10 rounded-full overflow-hidden group cursor-pointer"
-            onClick={handleAvatarClick}
-          >
-            {session?.user?.image ? (
-              <>
-                <Image
-                  src={session.user.image}
-                  alt="Profile"
-                  fill
-                  className="object-cover"
-                />
-                {loading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  </div>
-                )}
-                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity">
-                  <Icons.Camera />
+          {session?.user?.image ? (
+            <>
+              <Image
+                src={session.user.image}
+                alt="Profile"
+                fill
+                className="object-cover"
+              />
+              {/* Loading Spinner */}
+              {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                 </div>
-              </>
-            ) : (
-              <div className="w-full h-full bg-gray-300 flex items-center justify-center group-hover:bg-gray-400 transition-colors">
-                <span className="text-xl text-gray-600">
-                  {session?.user?.name?.[0] || "U"}
-                </span>
+              )}
+              {/* Camera Overlay */}
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity">
+                <Camera  className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-            )}
-          </div>
-          <div className="hidden md:block text-left">
-            <p className="text-sm font-medium text-gray-800">
-              {session?.user?.name}
-            </p>
-            <p className="text-xs text-gray-500">{session?.user?.email}</p>
-          </div>
-        </button>
+            </>
+          ) : (
+            <div className="w-full h-full bg-gray-300 flex items-center justify-center group-hover:bg-gray-400 transition-colors">
+              <span className="text-xl text-gray-600">
+                {session?.user?.name?.[0] || "U"}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* User Info - Hidden on Mobile */}
+        <div className="hidden md:block text-left">
+          <p className="text-sm font-medium text-gray-800">
+            {session?.user?.name}
+          </p>
+          <p className="text-xs text-gray-500">{session?.user?.email}</p>
+        </div>
+
+        {/* Add dropdown indicator */}
+        <div className="hidden md:flex items-center">
+          <ChevronDown  
+            className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
+              isOpen ? 'transform rotate-180' : ''
+            }`}
+          />
+        </div>
+      </button>
+
+      {/* Mobile Menu Button - Visible only on mobile */}
+      <button 
+        className="md:hidden fixed top-4 right-4 z-50 p-2 rounded-full bg-white shadow-lg"
+        onClick={handleMenuToggle}
+      >
+        {isOpen ? <X /> : <Menu />}
+      </button>
 
         <input
           ref={fileInputRef}
