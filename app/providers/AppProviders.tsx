@@ -12,7 +12,7 @@ export default function AppProviders({
   return (
     <SessionProvider>
       <CartProvider>
-        <ToastContainer position="top-right" autoClose={3000} />
+        <ToastContainer position="bottom-right" autoClose={3000} />
         {children}
       </CartProvider>
     </SessionProvider>

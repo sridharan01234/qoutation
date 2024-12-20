@@ -71,7 +71,8 @@ model User {
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
   accounts           Account[]
-  quotations         Quotation[]
+  createdQuotations  Quotation[] @relation("QuotationCreator")
+  approvedQuotations Quotation[] @relation("QuotationApprover")
   sessions           Session[]
 }
 
@@ -140,6 +141,7 @@ model Quotation {
   date            DateTime        @default(now())
   validUntil      DateTime
   status          QuotationStatus @default(DRAFT)
+  statusChangedBy String?
   subtotal        Float
   taxRate         Float           @default(0)
   taxAmount       Float           @default(0)
@@ -156,7 +158,8 @@ model Quotation {
   updatedAt       DateTime        @updatedAt
   activities      Activity[]
   attachments     Attachment[]
-  user            User            @relation(fields: [userId], references: [id])
+  creator         User            @relation("QuotationCreator", fields: [userId], references: [id])
+  approver        User?           @relation("QuotationApprover", fields: [statusChangedBy], references: [id])
   items           QuotationItem[]
 
   @@index([quotationNumber])

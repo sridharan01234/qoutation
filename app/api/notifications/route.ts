@@ -1,84 +1,110 @@
-// app/api/notifications/route.ts
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../lib/auth'
 import { prisma } from '../../../lib/prisma';
 
-// Define the connections map if not already defined
+const debug = (...args: any[]) => {
+  console.log(new Date().toISOString(), ...args);
+};
+
+// Store active SSE connections
 const connections = new Map();
 
-export async function GET(request: Request) {
+// POST endpoint for sending notifications
+export async function POST(request: Request) {
   try {
-    const headersList = await headers();
-    const accept = headersList.get('accept');
-    const session = await getServerSession(authOptions)
-    
-    // Early return if not authenticated
+    const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return new NextResponse('Unauthorized', { 
-        status: 401,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-        }
-      });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    // Handle SSE connections
+    const payload = await request.json();
+
+    debug('POST: Notification payload received:', payload);
+
+    const notification = await prisma.notification.create({
+      data: {
+        userId: payload.creatorId,
+        title: payload.title,
+        message: payload.message,
+      },
+    });
+
+    // Send to connected client if online
+    const writer = connections.get(payload.creatorId);
+    if (writer) {
+      const encoder = new TextEncoder();
+      await writer.write(encoder.encode(`data: ${JSON.stringify(notification)}\n\n`));
+    }
+
+    return NextResponse.json(notification);
+  } catch (error) {
+    console.error('Error sending notification:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
+}
+
+// GET endpoint
+export async function GET(request: Request) {
+  try {
+    debug('GET: Request received');
+    const headersList = await headers();
+    const accept = headersList.get('accept');    
+    debug('GET: Accept header:', accept);
+    
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      debug('GET: Unauthorized request');
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+    debug('GET: User authenticated:', session.user.email);
+
     if (accept === 'text/event-stream') {
+      debug('GET: SSE connection requested');
       const stream = new TransformStream();
       const writer = stream.writable.getWriter();
       const encoder = new TextEncoder();
+      const userId = session.user.id;
 
-      try {
-        // Send initial heartbeat
-        const initialMessage = encoder.encode('data: {"type":"connected"}\n\n');
-        await writer.write(initialMessage);
+      debug('GET: Sending initial connection message');
+      await writer.write(encoder.encode('data: {"type":"connected"}\n\n'));
 
-        // Store the connection
-        const userId = session.user.id;
-        connections.set(userId, writer);
-
-        // Setup heartbeat interval
-        const heartbeatInterval = setInterval(async () => {
-          try {
-            await writer.write(encoder.encode('data: {"type":"heartbeat"}\n\n'));
-          } catch (error) {
-            console.log(error)
-            clearInterval(heartbeatInterval);
-            connections.delete(userId);
-            writer.close().catch(console.error);
-          }
-        }, 30000); // Send heartbeat every 30 seconds
-
-        // Clean up on connection close
-        request.signal.addEventListener('abort', () => {
+      const heartbeatInterval = setInterval(async () => {
+        try {
+          debug('GET: Sending heartbeat for user:', userId);
+          await writer.write(encoder.encode('data: {"type":"heartbeat"}\n\n'));
+        } catch (error) {
+          debug('GET: Heartbeat error for user:', userId, error);
+          console.error('Heartbeat error:', error);
           clearInterval(heartbeatInterval);
           connections.delete(userId);
           writer.close().catch(console.error);
-        });
+        }
+      }, 30000);
 
-        return new NextResponse(stream.readable, {
-          headers: {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache, no-transform',
-            'Connection': 'keep-alive',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            'X-Accel-Buffering': 'no'
-          },
-        });
-      } catch (error) {
-        console.error('Stream error:', error);
-        connections.delete(session.user.id);
-        return new NextResponse('Stream error', { status: 500 });
-      }
+      debug('GET: Storing connection for user:', userId);
+      connections.set(userId, writer);
+      debug('GET: Active connections count:', connections.size);
+
+      request.signal.addEventListener('abort', () => {
+        debug('GET: Connection aborted for user:', userId);
+        clearInterval(heartbeatInterval);
+        connections.delete(userId);
+        writer.close().catch(console.error);
+        debug('GET: Active connections count after abort:', connections.size);
+      });
+
+      return new Response(stream.readable, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
     }
 
-    // Handle regular GET requests
+    debug('GET: Fetching recent notifications');
     const notifications = await prisma.notification.findMany({
       where: {
         userId: session.user.id,
@@ -89,38 +115,23 @@ export async function GET(request: Request) {
       },
       take: 10
     });
+    debug('GET: Found notifications count:', notifications.length);
 
-    return NextResponse.json(notifications, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-      }
-    });
+    return NextResponse.json(notifications);
   } catch (error) {
-    console.error('Error in notifications route:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { 
-        status: 500,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-        }
-      }
-    );
+    debug('GET: Error:', error);
+    console.error('SSE error:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
 
-// Add OPTIONS handler for CORS preflight requests
 export async function OPTIONS() {
   return new NextResponse(null, {
+    status: 200,
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-    }
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
   });
 }

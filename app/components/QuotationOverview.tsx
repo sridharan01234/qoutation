@@ -8,7 +8,7 @@ import { toast } from "react-toastify";
 import { DateRangePicker } from "react-date-range";
 import { useSession } from "next-auth/react";
 import { QuotationStatus } from "@prisma/client";
-import QuotationDetailsModal from './QuotationDetailsModal';
+import QuotationDetailsModal from "./QuotationDetailsModal";
 import {
   FaSearch,
   FaFilter,
@@ -22,56 +22,7 @@ import {
   FaHistory,
 } from "react-icons/fa";
 
-interface QuotationItem {
-  id: string;
-  productId: string;
-  quantity: number;
-  unitPrice: number;
-  discount: number;
-  tax: number;
-  total: number;
-  product: {
-    name: string;
-    sku: string;
-    price: number;
-  };
-}
-
-interface Activity {
-  id: string;
-  type: string;
-  description: string;
-  createdAt: Date;
-  user: {
-    name: string | null;
-    email: string;
-  };
-}
-
-interface Quotation {
-  id: string;
-  quotationNumber: string;
-  date: Date;
-  validUntil: Date;
-  status: QuotationStatus;
-  totalAmount: number;
-  currency: string;
-  user: {
-    id: string;
-    name: string | null;
-    email: string;
-    role: string;
-  };
-  items: QuotationItem[];
-  activities: Activity[];
-}
-
-interface PaginationData {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
+import type { PaginationData, Quotation } from "../types";
 
 export default function AdminQuotationOverview() {
   const router = useRouter();
@@ -99,7 +50,6 @@ export default function AdminQuotationOverview() {
     key: "selection",
   });
 
-
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
@@ -111,78 +61,80 @@ export default function AdminQuotationOverview() {
   }, [status, session]);
 
   // components/QuotationOverview.tsx
-const fetchQuotations = async () => {
-  try {
-    setLoading(true);
+  const fetchQuotations = async () => {
+    try {
+      setLoading(true);
 
-    // Format dates properly
-    const formattedStartDate = dateRange.startDate
-      ? format(new Date(dateRange.startDate), "yyyy-MM-dd")
-      : undefined;
-    const formattedEndDate = dateRange.endDate
-      ? format(new Date(dateRange.endDate), "yyyy-MM-dd")
-      : undefined;
+      // Format dates properly
+      const formattedStartDate = dateRange.startDate
+        ? format(new Date(dateRange.startDate), "yyyy-MM-dd")
+        : undefined;
+      const formattedEndDate = dateRange.endDate
+        ? format(new Date(dateRange.endDate), "yyyy-MM-dd")
+        : undefined;
 
-    // Map frontend sort fields to backend fields
-    const sortFieldMapping: Record<string, string> = {
-      date: "createdAt",
-      number: "quotationNumber",
-      amount: "totalAmount",
-      status: "status",
-    };
+      // Map frontend sort fields to backend fields
+      const sortFieldMapping: Record<string, string> = {
+        date: "createdAt",
+        number: "quotationNumber",
+        amount: "totalAmount",
+        status: "status",
+      };
 
-    const finalSortBy = sortFieldMapping[sortBy] || "createdAt";
+      const finalSortBy = sortFieldMapping[sortBy] || "createdAt";
 
-    const response = await axios.get("/api/admin/quotations", {
-      params: {
-        search: searchQuery || undefined,
-        status: filterStatus === "all" ? undefined : filterStatus,
-        startDate: formattedStartDate,
-        endDate: formattedEndDate,
-        sortBy: finalSortBy,
-        sortOrder,
-        page: pagination.page,
-        limit: pagination.limit,
-      },
-    });
+      const response = await axios.get("/api/admin/quotations", {
+        params: {
+          search: searchQuery || undefined,
+          status: filterStatus === "all" ? undefined : filterStatus,
+          startDate: formattedStartDate,
+          endDate: formattedEndDate,
+          sortBy: finalSortBy,
+          sortOrder,
+          page: pagination.page,
+          limit: pagination.limit,
+        },
+      });
 
-    if (response.data.success) {
-      setQuotations(response.data.quotations);
-      setPagination(response.data.pagination);
-    } else {
-      throw new Error(response.data.error || "Failed to fetch quotations");
+      if (response.data.success) {
+        setQuotations(response.data.quotations);
+        setPagination(response.data.pagination);
+      } else {
+        throw new Error(response.data.error || "Failed to fetch quotations");
+      }
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.error ||
+        error.message ||
+        "An unexpected error occurred";
+      console.error("Error fetching quotations:", error);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
-  } catch (error: any) {
-    const errorMessage =
-      error.response?.data?.error ||
-      error.message ||
-      "An unexpected error occurred";
-    console.error("Error fetching quotations:", error);
-    toast.error(errorMessage);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-const handleSort = (key: string) => {
-  const newOrder = sortBy === key && sortOrder === "asc" ? "desc" : "asc";
-  setSortOrder(newOrder);
-  setSortBy(key);
-  // Reset to first page when sorting changes
-  setPagination((prev) => ({ ...prev, page: 1 }));
-};
+  const handleSort = (key: string) => {
+    const newOrder = sortBy === key && sortOrder === "asc" ? "desc" : "asc";
+    setSortOrder(newOrder);
+    setSortBy(key);
+    // Reset to first page when sorting changes
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
 
-// Add a handle page change function
-const handlePageChange = (newPage: number) => {
-  setPagination((prev) => ({ ...prev, page: newPage }));
-};
-
-// Add useEffect to fetch data when sorting or pagination changes
-useEffect(() => {
-  if (status === "authenticated" && session?.user?.role === "ADMIN") {
-    fetchQuotations();
-  }
-}, [sortBy, sortOrder, pagination.page, filterStatus, dateRange, searchQuery]);
+  // Add useEffect to fetch data when sorting or pagination changes
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.role === "ADMIN") {
+      fetchQuotations();
+    }
+  }, [
+    sortBy,
+    sortOrder,
+    pagination.page,
+    filterStatus,
+    dateRange,
+    searchQuery,
+  ]);
 
   const getStatusStyle = (status: QuotationStatus) => {
     switch (status) {
@@ -387,10 +339,10 @@ useEffect(() => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {quotation.user.name || "N/A"}
+                          {quotation.creator.name || "N/A"}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {quotation.user.email}
+                          {quotation.creator.email}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -568,6 +520,8 @@ useEffect(() => {
       {isDetailsModalOpen && selectedQuotation && (
         <QuotationDetailsModal
           quotation={selectedQuotation}
+          isAdmin={true}
+          onStatusChange={fetchQuotations}
           onClose={() => {
             setIsDetailsModalOpen(false);
             setSelectedQuotation(null);

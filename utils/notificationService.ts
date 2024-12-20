@@ -1,4 +1,11 @@
 // utils/notificationService.ts
+interface NotificationPayload {
+  userId: string;
+  type: string;
+  title: string;
+  message: string;
+  data?: any;
+}
 export class NotificationService {
     private eventSource: EventSource | null = null;
     private reconnectAttempts = 0;
