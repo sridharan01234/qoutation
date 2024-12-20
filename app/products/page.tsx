@@ -29,6 +29,7 @@ export default function CustomerProductsPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [category] = useState('');
 
   const router = useRouter();
   const [showFilters, setShowFilters] = useState(false);
@@ -54,10 +55,6 @@ export default function CustomerProductsPage() {
   useEffect(() => {
     fetchProducts();
   }, []);
-
-  useEffect(() => {
-    filterProducts();
-  }, [searchQuery, selectedCategory, products]);
 
 // Update your fetchProducts function
 const fetchProducts = async () => {

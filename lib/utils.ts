@@ -36,6 +36,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Generates a new quotation number
+ * @returns Promise resolving to the generated quotation number
+ */
 export async function generateQuotationNumber() {
   try {
     const today = new Date();

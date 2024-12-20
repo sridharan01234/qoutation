@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
 import { default as NextImage } from "next/image";
 import { uploadAvatar, updateProfile } from "@/utils/api";
+import { FiRefreshCw  } from 'react-icons/fi'
 import { toast } from "react-hot-toast";
 import {
   FiUser,
@@ -22,36 +23,94 @@ const TABS = [
   { id: "security", label: "Security", icon: FiShield },
   { id: "preferences", label: "Preferences", icon: FiGlobe },
 ];
+export async function GET(request) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phoneNumber: true,
+        dateOfBirth: true,
+        gender: true,
+        company: true,
+        jobTitle: true,
+        department: true,
+        linkedinUrl: true,
+        websiteUrl: true,
+        address: true,
+        city: true,
+        state: true,
+        country: true,
+        postalCode: true,
+        language: true,
+        timezone: true,
+        currency: true,
+        emailNotifications: true,
+        smsNotifications: true,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    console.error("Profile fetch error:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch profile" },
+      { status: 500 }
+    );
+  }
+}
 
 export default function ProfileSettings() {
-  const { data: session, update: updateSession } = useSession();
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
   const fileInputRef = useRef(null);
   const [previewImage, setPreviewImage] = useState(null);
-
+  const [modifiedFields, setModifiedFields] = useState({});
   const [formData, setFormData] = useState({
     // Personal Info
-    firstName: session?.user?.firstName || "",
-    lastName: session?.user?.lastName || "",
-    email: session?.user?.email || "",
-    phoneNumber: session?.user?.phoneNumber || "",
-    dateOfBirth: session?.user?.dateOfBirth || "",
-    gender: session?.user?.gender || "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phoneNumber: "",
+    dateOfBirth: "",
+    gender: "",
 
     // Business Info
-    company: session?.user?.company || "",
-    jobTitle: session?.user?.jobTitle || "",
-    department: session?.user?.department || "",
-    linkedinUrl: session?.user?.linkedinUrl || "",
-    websiteUrl: session?.user?.websiteUrl || "",
+    company: "",
+    jobTitle: "",
+    department: "",
+    linkedinUrl: "",
+    websiteUrl: "",
 
     // Address
-    address: session?.user?.address || "",
-    city: session?.user?.city || "",
-    state: session?.user?.state || "",
-    country: session?.user?.country || "",
-    postalCode: session?.user?.postalCode || "",
+    address: "",
+    city: "",
+    state: "",
+    country: "",
+    postalCode: "",
 
     // Security
     currentPassword: "",
@@ -59,28 +118,139 @@ export default function ProfileSettings() {
     confirmPassword: "",
 
     // Preferences
-    language: session?.user?.language || "en",
-    timezone: session?.user?.timezone || "UTC",
-    currency: session?.user?.currency || "USD",
-    emailNotifications: session?.user?.emailNotifications || false,
-    smsNotifications: session?.user?.smsNotifications || false,
+    language: "en",
+    timezone: "UTC",
+    currency: "USD",
+    emailNotifications: false,
+    smsNotifications: false,
   });
 
+  // Add loading state for initial fetch
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Function to fetch user profile
+  const fetchUserProfile = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/profile");
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch profile");
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // Format date if it exists
+        const userData = {
+          ...result.data,
+          dateOfBirth: result.data.dateOfBirth 
+            ? new Date(result.data.dateOfBirth).toISOString().split('T')[0]
+            : "",
+        };
+
+        // Update form data with fetched data
+        setFormData(prev => ({
+          ...prev,
+          ...userData,
+          // Keep security fields empty
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        }));
+
+        // Reset modified fields
+        setModifiedFields({});
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      toast.error("Failed to load profile data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch profile data when component mounts and session changes
   useEffect(() => {
     if (session?.user) {
-      setFormData((prev) => ({
-        ...prev,
-        ...session.user,
-      }));
+      fetchUserProfile();
     }
   }, [session]);
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  const refreshProfile = () => {
+    fetchUserProfile();
+  };
+
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    let newValue;
+
+    if (type === "checkbox") {
+      newValue = checked;
+    } else if (name === "dateOfBirth") {
+      newValue = value || null;
+    } else if (type === "url" && value === "") {
+      newValue = null;
+    } else {
+      newValue = value;
+    }
+
+    // Update formData
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: newValue,
     }));
+
+    // Compare with session data for tracking changes
+    let isChanged = false;
+    if (type === "checkbox") {
+      isChanged = session?.user?.[name] !== checked;
+    } else if (name === "dateOfBirth") {
+      const sessionDate = session?.user?.[name]
+        ? new Date(session.user[name]).toISOString().split("T")[0]
+        : null;
+      const newDate = value
+        ? new Date(value).toISOString().split("T")[0]
+        : null;
+      isChanged = sessionDate !== newDate;
+    } else {
+      isChanged = session?.user?.[name] !== newValue;
+    }
+
+    // Update modified fields
+    if (isChanged) {
+      setModifiedFields((prev) => ({
+        ...prev,
+        [name]: newValue,
+      }));
+    } else {
+      setModifiedFields((prev) => {
+        const updated = { ...prev };
+        delete updated[name];
+        return updated;
+      });
+    }
+  };
+
+  // Add this helper function to format dates for display
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return "";
+    try {
+      const date = new Date(dateString);
+      return date.toISOString().split('T')[0];
+    } catch {
+      return "";
+    }
   };
 
   const handleAvatarChange = async (e) => {
@@ -116,20 +286,95 @@ export default function ProfileSettings() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      formData.newPassword &&
-      formData.newPassword !== formData.confirmPassword
-    ) {
-      toast.error("Passwords do not match");
+    // Validate passwords if changing
+    if (formData.newPassword) {
+      if (formData.newPassword !== formData.confirmPassword) {
+        toast.error("Passwords do not match");
+        return;
+      }
+      // Add password fields to modified fields
+      modifiedFields.currentPassword = formData.currentPassword;
+      modifiedFields.newPassword = formData.newPassword;
+    }
+
+    // Check if there are any modifications
+    if (Object.keys(modifiedFields).length === 0) {
+      toast.info("No changes to save");
       return;
     }
 
+    // Create a copy of modified fields for processing
+    const processedFields = { ...modifiedFields };
+
+    // Process date fields if they exist
+    if (processedFields.dateOfBirth) {
+      try {
+        // Ensure valid date format
+        const date = new Date(processedFields.dateOfBirth);
+        if (isNaN(date.getTime())) {
+          toast.error("Invalid date format");
+          return;
+        }
+        processedFields.dateOfBirth = date.toISOString();
+      } catch (error) {
+        toast.error("Invalid date format");
+        return;
+      }
+    }
+
+    // Process URL fields if they exist
+    const urlFields = ["linkedinUrl", "websiteUrl"];
+    urlFields.forEach((field) => {
+      if (processedFields[field] === "") {
+        processedFields[field] = null;
+      }
+    });
+
+    // Process boolean fields
+    const booleanFields = ["emailNotifications", "smsNotifications"];
+    booleanFields.forEach((field) => {
+      if (field in processedFields) {
+        processedFields[field] = Boolean(processedFields[field]);
+      }
+    });
+
     try {
       setLoading(true);
-      const result = await updateProfile(formData);
+      toast.loading("Updating profile...");
+
+      const response = await fetch("/api/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(processedFields),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to update profile");
+      }
+
+      // Update session with new data
       await updateSession(result.data);
+
+      // Clear modified fields
+      setModifiedFields({});
+
+      // Clear password fields
+      setFormData((prev) => ({
+        ...prev,
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      }));
+
+      toast.dismiss();
       toast.success("Profile updated successfully");
     } catch (error) {
+      console.error("Profile update error:", error);
+      toast.dismiss();
       toast.error(error.message || "Failed to update profile");
     } finally {
       setLoading(false);
@@ -196,7 +441,7 @@ export default function ProfileSettings() {
               <input
                 type="date"
                 name="dateOfBirth"
-                value={formData.dateOfBirth}
+                value={formatDateForInput(formData.dateOfBirth)}
                 onChange={handleInputChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
@@ -478,6 +723,10 @@ export default function ProfileSettings() {
     }
   };
 
+  function changeTab(id) {
+    refreshProfile();
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -594,6 +843,13 @@ export default function ProfileSettings() {
                     </>
                   )}
                 </button>
+                <button
+      type="button"
+      onClick={refreshProfile}
+      className="ml-2 p-2 text-gray-500 hover:text-gray-700"
+    >
+      <FiRefreshCw className="w-5 h-5" />
+    </button>
               </div>
             </form>
           </div>

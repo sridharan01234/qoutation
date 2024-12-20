@@ -132,7 +132,7 @@ const CartDropdown = () => {
               </p>
             ) : (
               <>
-                <div className="max-h-96 overflow-auto">
+                <div className="max-h-96 w-100 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                   {cart.map((item) => (
                     <div
                       key={item.id}
@@ -156,7 +156,7 @@ const CartDropdown = () => {
                       </div>
                       <button
                         onClick={() => removeFromCart(item.id)}
-                        className="text-gray-400 hover:text-red-500"
+                        className="text-gray-400 hover:text-red-500 px-2"
                       >
                         ×
                       </button>
