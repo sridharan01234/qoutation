@@ -2,13 +2,17 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma'
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../../lib/auth';
+import { authOptions } from '@/lib/auth';
 import { generateQuotationNumber } from "@/lib/utils";
 import { QuotationStatus, PaymentTerms } from "@prisma/client";
 
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions)
+
+    if (!session) {
+      return NextResponse.json({ error: "check Unauthorized" }, { status: 401 })
+    }
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

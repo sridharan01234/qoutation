@@ -18,6 +18,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  cookies: {
+    secure: process.env.NODE_ENV === 'production',
+  },
 };
 
 export default nextConfig;

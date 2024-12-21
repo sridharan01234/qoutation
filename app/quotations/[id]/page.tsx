@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { QuotationStatus, PaymentTerms } from "@prisma/client";
+import { toast } from "react-toastify";
 
 interface QuotationItem {
   id: string;
@@ -54,6 +55,32 @@ export default function QuotationPage({ params }: { params: { id: string } }) {
   const [error, setError] = useState<string | null>(null);
   const { data: status } = useSession();
   const router = useRouter();
+
+  const handleApproval = async () => {
+    try {
+      const response = await fetch(
+        `/api/quotations/${params.id}/send-for-approval`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to approve quotation");
+      }
+
+      // Update quotation status locally
+      setQuotation((prev) => (prev ? { ...prev, status: "PENDING" } : null));
+      toast("Quotation Sent for Approval");
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
 
   useEffect(() => {
     const fetchQuotation = async () => {
@@ -250,6 +277,23 @@ export default function QuotationPage({ params }: { params: { id: string } }) {
                 <span className="text-base font-medium text-gray-900">
                   {quotation.currency} {quotation.totalAmount.toFixed(2)}
                 </span>
+              </div>
+
+              <div className="flex justify-end py-2 border-t border-gray-200">
+                {/* Approval & Edit */}
+                {quotation.status === "DRAFT" && (
+                  <div className="flex items-center space-x-4">
+                    <button className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                      Edit
+                    </button>
+                    <button
+                      onClick={handleApproval}
+                      className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      Send for Approval
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
