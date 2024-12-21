@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     const startDate = searchParams.get("startDate")
       ? new Date(searchParams.get("startDate")!)
       : undefined;
-    let endDate = searchParams.get("endDate")
+    const endDate = searchParams.get("endDate")
       ? new Date(searchParams.get("endDate")!)
       : undefined;
 
