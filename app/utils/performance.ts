@@ -1,4 +1,5 @@
-// utils/performance.ts
+type AnyFunction = (...args: any[]) => any;
+
 export const measurePerformance = (label: string) => {
   if (typeof performance !== 'undefined') {
     const start = performance.now();
@@ -10,31 +11,35 @@ export const measurePerformance = (label: string) => {
   return () => {};
 };
 
-export const deferredExecution = (fn: Function, delay: number = 0) => {
+export const deferredExecution = <T extends AnyFunction>(fn: T, delay: number = 0): void => {
   if (typeof window !== 'undefined') {
     if (window.requestIdleCallback) {
-      window.requestIdleCallback(() => setTimeout(fn, delay));
+      window.requestIdleCallback(() => setTimeout(() => fn(), delay));
     } else {
-      setTimeout(fn, delay);
+      setTimeout(() => fn(), delay);
     }
   }
 };
 
-export const throttle = (func: Function, limit: number) => {
+export const throttle = <T extends AnyFunction>(func: T, limit: number): T => {
   let inThrottle: boolean;
-  return function (...args: any[]) {
+  
+  return function(this: any, ...args: Parameters<T>): ReturnType<T> {
     if (!inThrottle) {
-      func.apply(this, args);
+      const result = func.apply(this, args);
       inThrottle = true;
       setTimeout(() => (inThrottle = false), limit);
+      return result;
     }
-  };
+    return undefined as ReturnType<T>;
+  } as T;
 };
 
-export const debounce = (func: Function, wait: number) => {
+export const debounce = <T extends AnyFunction>(func: T, wait: number): T => {
   let timeout: NodeJS.Timeout;
-  return function (...args: any[]) {
+  
+  return function(this: any, ...args: Parameters<T>): void {
     clearTimeout(timeout);
     timeout = setTimeout(() => func.apply(this, args), wait);
-  };
+  } as T;
 };
