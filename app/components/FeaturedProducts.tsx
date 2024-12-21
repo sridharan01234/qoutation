@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ProductGridItem from "../components/ProductGridItem";
+import {  useCart } from "../context/CartContext";
 
 interface Product {
   id: string;
@@ -32,12 +33,10 @@ interface Product {
 
 interface FeaturedProductsProps {
   productsPerSlide?: number;
-  addToCart: (product: Product) => void;
 }
 
 export default function FeaturedProducts({ 
   productsPerSlide = 4,
-  addToCart 
 }: FeaturedProductsProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -45,6 +44,7 @@ export default function FeaturedProducts({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { addToCart } = useCart();
 
   // Fetch featured products
   useEffect(() => {

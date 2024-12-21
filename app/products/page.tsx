@@ -1,10 +1,19 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { FaSearch, FaFilter } from "react-icons/fa";
-import ProductGridItem from "../components/ProductGridItem";
-import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
+import { useDebounce, useInfiniteScroll } from "../hooks/useOptimizations";
 import { useCart } from "../context/CartContext";
+
+const ProductGridItem = dynamic(
+  () => import("../components/optimized/ProductGridItem"),
+  {
+    loading: () => (
+      <div className="animate-pulse bg-gray-200 rounded-lg h-64"></div>
+    ),
+  }
+);
 
 interface Product {
   id: string;
@@ -28,18 +37,31 @@ export default function CustomerProductsPage() {
   const [error, setError] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [category] = useState('');
+  const [category] = useState("");
 
   const router = useRouter();
   const [showFilters, setShowFilters] = useState(false);
   const [selectedSort, setSelectedSort] = useState("featured");
 
+  // Add pagination state
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const ITEMS_PER_PAGE = 12;
+
+  // Infinite scroll reference
+  const loadMoreRef = useInfiniteScroll(() => {
+    if (hasMore) {
+      setPage((prev) => prev + 1);
+    }
+  });
+
   const navigateToProduct = (productId: string) => {
     router.push(`/products/${productId}`);
   };
 
-  const sortProducts = (products: Product[]) => {
+  const sortProducts = (products: any) => {
     switch (selectedSort) {
       case "price-asc":
         return [...products].sort((a, b) => a.price - b.price);
@@ -52,66 +74,96 @@ export default function CustomerProductsPage() {
     }
   };
 
+  // Dynamically import ProductGridItem with loading state
+  const DynamicProductGridItem = dynamic(
+    () => import("../components/ProductGridItem"),
+    {
+      loading: () => (
+        <div className="animate-pulse bg-gray-200 rounded-lg h-64"></div>
+      ),
+    }
+  );
+
   useEffect(() => {
     fetchProducts();
   }, []);
 
-// Update your fetchProducts function
-const fetchProducts = async () => {
-  try {
-    setLoading(true);
-    setError(null);
-    const response = await fetch("/api/products");
+  useEffect(() => {
+    filterProducts();
+  }, [debouncedSearchQuery, selectedCategory, selectedSort]);
 
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status}`);
+  // Update your fetchProducts function
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch("/api/products");
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success && Array.isArray(result.data)) {
+        setProducts(result.data);
+        setFilteredProducts(result.data);
+      } else {
+        throw new Error("Invalid data format received from API");
+      }
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      setError("Failed to load products. Please try again.");
+      setProducts([]);
+      setFilteredProducts([]);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const result = await response.json();
-    
-    if (result.success && Array.isArray(result.data)) {
-      setProducts(result.data);
-      setFilteredProducts(result.data);
-    } else {
-      throw new Error('Invalid data format received from API');
+  interface Product {
+    name: string;
+    description: string;
+    category: {
+      name: string;
+    };
+    // Add other product properties as needed
+  }
+
+  const filterProducts = useCallback(() => {
+    if (!Array.isArray(products)) return;
+
+    try {
+      let filtered = [...products] as Product[];
+
+      // Search filter
+      if (debouncedSearchQuery) {
+        filtered = filtered.filter(
+          (product: Product) =>
+            product?.name
+              ?.toLowerCase()
+              .includes(debouncedSearchQuery.toLowerCase()) ||
+            product?.description
+              ?.toLowerCase()
+              .includes(debouncedSearchQuery.toLowerCase())
+        );
+      }
+
+      // Category filter
+      if (selectedCategory && selectedCategory !== "all") {
+        filtered = filtered.filter(
+          (product: Product) => product?.category?.name === selectedCategory
+        );
+      }
+
+      // Apply sorting
+      filtered = sortProducts(filtered);
+      setFilteredProducts(filtered);
+    } catch (error) {
+      console.error("Error filtering products:", error);
+      setFilteredProducts([]);
     }
-  } catch (err) {
-    console.error("Error fetching products:", err);
-    setError("Failed to load products. Please try again.");
-    setProducts([]);
-    setFilteredProducts([]);
-  } finally {
-    setLoading(false);
-  }
-};
-
-// Update your filterProducts function
-const filterProducts = () => {
-  if (!Array.isArray(products)) return;
-  
-  let filtered = [...products];
-
-  // Search filter
-  if (searchQuery) {
-    filtered = filtered.filter(
-      (product) =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }
-
-  // Category filter
-  if (selectedCategory !== "all") {
-    filtered = filtered.filter(
-      (product) => product.category.name === selectedCategory
-    );
-  }
-
-  // Apply sorting
-  filtered = sortProducts(filtered);
-  setFilteredProducts(filtered);
-};
-  
+  }, [products, debouncedSearchQuery, selectedCategory, sortProducts]);
 
   if (loading) {
     return (
@@ -197,15 +249,25 @@ const filterProducts = () => {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {sortProducts(filteredProducts).map((product) => (
-              <ProductGridItem
-                key={product.id}
-                product={product}
-                onNavigate={navigateToProduct}
-                onAddToCart={addToCart}
-              />
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center">
+            {sortProducts(filteredProducts)
+              .slice(0, page * ITEMS_PER_PAGE)
+              .map((product: any) => (
+                <ProductGridItem
+                  key={product.id}
+                  product={product}
+                  onNavigate={navigateToProduct}
+                  onAddToCart={addToCart}
+                />
+              ))}
+            {hasMore && (
+              <div
+                ref={loadMoreRef}
+                className="col-span-full flex justify-center p-4"
+              >
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            )}
           </div>
         )}
       </div>
