@@ -143,6 +143,7 @@ CREATE TABLE `Quotation` (
     `date` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `validUntil` DATETIME(3) NOT NULL,
     `status` ENUM('DRAFT', 'PENDING', 'APPROVED', 'REJECTED', 'EXPIRED', 'CONVERTED', 'CANCELLED') NOT NULL DEFAULT 'DRAFT',
+    `statusChangedBy` VARCHAR(191) NULL,
     `subtotal` DOUBLE NOT NULL,
     `taxRate` DOUBLE NOT NULL DEFAULT 0,
     `taxAmount` DOUBLE NOT NULL DEFAULT 0,
@@ -244,6 +245,9 @@ ALTER TABLE `ProductsOnTags` ADD CONSTRAINT `ProductsOnTags_tagId_fkey` FOREIGN 
 
 -- AddForeignKey
 ALTER TABLE `Quotation` ADD CONSTRAINT `Quotation_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Quotation` ADD CONSTRAINT `Quotation_statusChangedBy_fkey` FOREIGN KEY (`statusChangedBy`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `QuotationItem` ADD CONSTRAINT `QuotationItem_productId_fkey` FOREIGN KEY (`productId`) REFERENCES `Product`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
