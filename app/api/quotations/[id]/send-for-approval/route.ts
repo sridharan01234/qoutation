@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import prisma from "@/lib/prisma";
+import {prisma} from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { QuotationStatus } from "@prisma/client";
 
@@ -30,7 +30,7 @@ export async function PUT(
       );
     }
 
-    if (quotation.creatorId !== session.user.id) {
+    if (quotation.creator.id !== session.user.id) {
       return NextResponse.json(
         { error: "Not authorized to modify this quotation" },
         { status: 403 }

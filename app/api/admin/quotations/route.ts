@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { QuotationStatus, Role } from "@prisma/client";
+import { Role } from "@prisma/client";
 
 export async function GET(request: Request) {
   try {
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
 
-    // Parse and adjust dates to handle timezone issues
+    // Parse dates and set to start of day and end of day
     const startDate = searchParams.get("startDate")
       ? new Date(searchParams.get("startDate")!)
       : undefined;
@@ -27,9 +27,17 @@ export async function GET(request: Request) {
       ? new Date(searchParams.get("endDate")!)
       : undefined;
 
-    // Adjust end date to include the entire day
+    // Get status from query params
+    const status = searchParams.get("status") as QuotationStatus | null;
+
+    // Set start date to beginning of day (00:00:00)
+    if (startDate) {
+      startDate.setHours(0, 0, 0, 0);
+    }
+
+    // Set end date to end of day (23:59:59.999)
     if (endDate) {
-      endDate = new Date(endDate.setHours(23, 59, 59, 999));
+      endDate.setHours(23, 59, 59, 999);
     }
 
     const sortBy = searchParams.get("sortBy") || "date";
@@ -38,48 +46,67 @@ export async function GET(request: Request) {
     const limit = Math.max(1, parseInt(searchParams.get("limit") || "10"));
     const skip = (page - 1) * limit;
 
-    // Build where clause
-    const where: any = {};
+    // Build where clause with all filters
+    let where: any = {};
 
-    // Add date range filter if dates are provided
+    // Add conditions to where clause
+    const conditions: any[] = [];
+
+    // Add date range condition if dates are provided
     if (startDate && endDate) {
-      where.createdAt = {
-        gte: startDate,
-        lte: endDate,
+      conditions.push({
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      });
+    }
+
+    // Add status condition if status is provided
+    if (status) {
+      conditions.push({
+        status: status,
+      });
+    }
+
+    // Combine all conditions with AND
+    if (conditions.length > 0) {
+      where = {
+        AND: conditions,
       };
     }
 
-    // Debug log
-    console.log("Query parameters:", {
-      startDate,
-      endDate,
+    // Log the query parameters for debugging
+    console.log("Query Parameters:", {
+      startDate: startDate?.toISOString(),
+      endDate: endDate?.toISOString(),
+      status,
+      where,
       sortBy,
       sortOrder,
       page,
       limit,
-      skip,
-      where,
     });
-
-    // First, let's check if we have any quotations at all
-    const totalQuotations = await prisma.quotation.count();
-    console.log("Total quotations in database:", totalQuotations);
-
-    // Now let's check how many match our where clause
-    const matchingQuotations = await prisma.quotation.count({ where });
-    console.log("Matching quotations:", matchingQuotations);
 
     try {
       const [quotations, total] = await Promise.all([
         prisma.quotation.findMany({
           where,
           orderBy: {
-            createdAt: sortOrder,
+            [sortBy]: sortOrder,
           },
           skip,
           take: limit,
           include: {
             creator: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+              },
+            },
+            approver: {
               select: {
                 id: true,
                 name: true,
@@ -111,14 +138,12 @@ export async function GET(request: Request) {
         prisma.quotation.count({ where }),
       ]);
 
-      console.log("Query results:", {
-        quotationsFound: quotations.length,
-        totalCount: total,
-        pagination: {
-          page,
-          limit,
-          totalPages: Math.ceil(total / limit),
-        },
+      // Log the results for debugging
+      console.log("Query Results:", {
+        totalQuotations: total,
+        returnedQuotations: quotations.length,
+        firstQuotationDate: quotations[0]?.date,
+        lastQuotationDate: quotations[quotations.length - 1]?.date,
       });
 
       return NextResponse.json({

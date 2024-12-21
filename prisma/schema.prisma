@@ -23,7 +23,6 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-  @@index([userId], map: "Account_userId_fkey")
 }
 
 model Session {
@@ -37,14 +36,14 @@ model Session {
 }
 
 model User {
-  id                 String      @id @default(cuid())
+  id                 String              @id @default(cuid())
   name               String?
-  email              String      @unique
+  email              String              @unique
   emailVerified      DateTime?
   password           String
   image              String?
-  role               Role        @default(USER)
-  isActive           Boolean     @default(true)
+  role               Role                @default(USER)
+  isActive           Boolean             @default(true)
   firstName          String?
   lastName           String?
   displayName        String?
@@ -59,29 +58,41 @@ model User {
   company            String?
   jobTitle           String?
   department         String?
-  language           String?     @default("en")
-  timezone           String?     @default("UTC")
-  currency           String?     @default("USD")
-  emailNotifications Boolean     @default(true)
-  smsNotifications   Boolean     @default(false)
+  language           String?             @default("en")
+  timezone           String?             @default("UTC")
+  currency           String?             @default("USD")
+  emailNotifications Boolean             @default(true)
+  smsNotifications   Boolean             @default(false)
   linkedinUrl        String?
   twitterUrl         String?
   websiteUrl         String?
   lastLoginAt        DateTime?
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
   accounts           Account[]
-  createdQuotations  Quotation[] @relation("QuotationCreator")
-  approvedQuotations Quotation[] @relation("QuotationApprover")
+  createdQuotations  Quotation[]         @relation("QuotationCreator")
+  approvedQuotations Quotation[]         @relation("QuotationApprover")
   sessions           Session[]
+  verificationToken  VerificationToken?
+  passwordResetToken PasswordResetToken?
 }
 
 model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expires   DateTime
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
 
-  @@id([identifier, token])
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expires   DateTime
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
 
 model Category {

@@ -1,0 +1,1 @@
+The issue has been fixed by updating the reset password route to correctly parse the parameters from the request body. The frontend was sending 'email', 'otp', and 'newPassword', but the API endpoint was expecting 'token' and 'password'. The parameter names have been aligned to match the frontend request.
