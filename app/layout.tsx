@@ -1,5 +1,6 @@
 "use client";
 import "./globals.css";
+import dynamic from 'next/dynamic';
 import { Inter, Poppins, Playfair_Display } from "next/font/google";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";

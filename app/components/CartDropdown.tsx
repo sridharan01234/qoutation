@@ -97,19 +97,19 @@ const CartDropdown = () => {
   return (
     <div className="relative">
       <button
-        className="text-gray-600 hover:text-gray-900 relative"
+        className="text-gray-600 hover:text-gray-900 relative p-2 rounded-full hover:bg-gray-100 touch-manipulation"
         onClick={() => setIsOpen(!isOpen)}
       >
         <FaShoppingCart size={20} />
         {cartItemCount > 0 && (
-          <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
             {cartItemCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50">
+        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-[60] max-w-[calc(100vw-2rem)]">
           <div className="p-4">
             <h3 className="text-lg font-semibold mb-4">Draft Quotation</h3>
 
