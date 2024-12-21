@@ -181,8 +181,23 @@ export const authOptions: NextAuthOptions = {
 
           if (existingUser) {
             // Link the Google account to the existing user
-            await prisma.account.create({
-              data: {
+            await prisma.account.upsert({
+              where: {
+                // Assuming you have a unique constraint on provider and providerAccountId
+                provider_providerAccountId: {
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId!
+                }
+              },
+              update: {
+                access_token: account.access_token,
+                expires_at: account.expires_at,
+                token_type: account.token_type,
+                scope: account.scope,
+                id_token: account.id_token,
+                session_state: account.session_state,
+              },
+              create: {
                 userId: existingUser.id,
                 type: account.type!,
                 provider: account.provider,
@@ -193,7 +208,7 @@ export const authOptions: NextAuthOptions = {
                 scope: account.scope,
                 id_token: account.id_token,
                 session_state: account.session_state,
-              },
+              }
             })
 
             // Update existing user's info
