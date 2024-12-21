@@ -27,7 +27,7 @@ export async function GET(
             },
           },
         },
-        user: {
+        creator: {
           select: {
             name: true,
             email: true,
@@ -70,9 +70,9 @@ export async function GET(
     // Customer information
     doc.text("To:", 20, 85);
     doc.setFont("helvetica", "bold");
-    doc.text(quotation.creater.name || "Customer Name", 20, 90);
+    doc.text(quotation.creator.name || "Customer Name", 20, 90);
     doc.setFont("helvetica", "normal");
-    doc.text(quotation.creater.email || "", 20, 95);
+    doc.text(quotation.creator.email || "", 20, 95);
 
     // Items table
     const tableColumns = [
