@@ -8,6 +8,7 @@ export async function middleware(request: NextRequest) {
   // Allow public routes
   if (
     pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/products') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/static') ||
     pathname === '/login' ||
@@ -45,6 +46,6 @@ export const config = {
     '/admin/:path*',
     '/profile/:path*',
     '/manager/:path*',
-    '/api/:path*',
+    '/api/admin/:path*',
   ]
 }
