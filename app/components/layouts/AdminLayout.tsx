@@ -57,10 +57,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   const breadcrumbs = generateBreadcrumbs();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-primary-50">
       {/* Mobile Sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-primary-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white">
           <div className="flex h-16 items-center justify-between px-4">
             <span className="text-xl font-semibold">Admin Panel</span>
@@ -96,7 +96,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
 
       {/* Desktop Sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex min-h-0 flex-1 flex-col border-r border-gray-200 bg-white">
+        <div className="flex min-h-0 flex-1 flex-col border-r border-primary-100 bg-white">
           <div className="flex h-16 items-center px-4">
             <span className="text-xl font-semibold">Admin Panel</span>
           </div>
@@ -145,7 +145,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                     <li key={breadcrumb.href}>
                       <div className="flex items-center">
                         <svg
-                          className="w-6 h-6 text-gray-400"
+                          className="w-6 h-6 text-primary-400"
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
@@ -182,7 +182,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
         {/* Footer */}
         <footer className="bg-white border-t border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <p className="text-center text-sm text-gray-500">
+            <p className="text-center text-sm text-primary-500">
               © {new Date().getFullYear()} . All rights reserved Sridharan and co.
             </p>
           </div>
