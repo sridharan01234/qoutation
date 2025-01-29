@@ -79,19 +79,7 @@ export default function ProductGridItem({ product, onNavigate, onAddToCart }: Pr
           {product.description}
         </p>
         <div className="flex items-center justify-between mt-auto">
-          <div className="flex flex-col">
-            <span className="text-xl font-bold text-gray-900">
-              {new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "USD",
-              }).format(product.price)}
-            </span>
-            {product.status === "IN_STOCK" && (
-              <span className="text-xs text-green-600">
-                {product.stock} in stock
-              </span>
-            )}
-          </div>
+
           <button
             onClick={(e) => {
               e.stopPropagation();

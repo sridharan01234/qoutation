@@ -106,14 +106,14 @@ const ProductGridItem = memo(function ProductGridItem({
         <div className="flex items-center justify-between pt-2 border-t border-gray-100">
           <div className="flex flex-col">
             <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold text-primary-600 font-poppins">
+              {/* <span className="text-xl font-bold text-primary-600 font-poppins">
                 ${product.price.toFixed(2)}
-              </span>
-              {product.originalPrice && (
+              </span> */}
+              {/* {product.originalPrice && (
                 <span className="text-sm text-gray-400 line-through font-medium">
                   ${product.originalPrice.toFixed(2)}
                 </span>
-              )}
+              )} */}
             </div>
             {product.discount && (
               <span className="text-xs text-secondary-600 font-medium">

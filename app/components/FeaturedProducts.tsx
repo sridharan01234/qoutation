@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ProductGridItem from "../components/ProductGridItem";
 import { useCart } from "../context/CartContext";
+import Link from "next/link";
 
 interface Product {
   id: string;
@@ -73,33 +74,24 @@ export default function FeaturedProducts({
   const nextSlide = () => {
     if (isAnimating || products.length <= productsPerSlide) return;
     setIsAnimating(true);
-    setCurrentIndex((prevIndex) =>
-      prevIndex + productsPerSlide >= products.length
-        ? 0
-        : prevIndex + productsPerSlide
+    setCurrentIndex(
+      (prevIndex) => (prevIndex + productsPerSlide) % products.length
     );
-  };
-
-  const navigateToProduct = (productId: string) => {
-    router.push(`/products/${productId}`);
   };
 
   const prevSlide = () => {
     if (isAnimating || products.length <= productsPerSlide) return;
     setIsAnimating(true);
-    setCurrentIndex((prevIndex) =>
-      prevIndex - productsPerSlide < 0
-        ? Math.max(0, products.length - productsPerSlide)
-        : prevIndex - productsPerSlide
-    );
+    setCurrentIndex((prevIndex) => {
+      const newIndex = prevIndex - productsPerSlide;
+      return newIndex < 0 ? products.length - productsPerSlide : newIndex;
+    });
   };
 
   useEffect(() => {
     if (products.length <= productsPerSlide) return;
 
-    const timer = setInterval(() => {
-      nextSlide();
-    }, 5000);
+    const timer = setInterval(nextSlide, 5000);
 
     return () => clearInterval(timer);
   }, [currentIndex, products.length, productsPerSlide]);
@@ -273,9 +265,9 @@ export default function FeaturedProducts({
               }}
               onTransitionEnd={handleTransitionEnd}
             >
-              {products.map((product) => (
+              {products.map((product, index) => (
                 <motion.div
-                  key={product.id}
+                  key={`${product.id}-${index}`}
                   className="flex-shrink-0"
                   style={{ width: `calc(${100 / productsPerSlide}% - 1rem)` }}
                   whileHover={{ scale: 1.02 }}
@@ -285,11 +277,20 @@ export default function FeaturedProducts({
                     damping: 20,
                   }}
                 >
-                  <ProductGridItem
-                    product={product}
-                    onNavigate={() => navigateToProduct(product.id)}
-                    onAddToCart={() => addToCart(product)}
-                  />
+                  <Link
+                    href={`/products/${product.id}`}
+                    className="block h-full"
+                    scroll={false} // Prevents page scroll to top on navigation
+                  >
+                    <ProductGridItem
+                      product={product}
+                      onNavigate={(e) => {}}
+                      onAddToCart={(e) => {
+                        e.preventDefault(); // Prevent navigation when clicking add to cart
+                        addToCart(product);
+                      }}
+                    />
+                  </Link>
                 </motion.div>
               ))}
             </div>

@@ -1,7 +1,7 @@
 // app/products/[id]/page.tsx
 import { notFound } from "next/navigation";
 import ProductDetails from "../../components/ProductDetails";
-import { getProductById } from "@/lib/api"; // We'll create this
+import { getProductById } from "@/lib/api";
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const product = await getProductById(params.id);
