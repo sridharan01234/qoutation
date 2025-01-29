@@ -47,35 +47,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
 
     // Find the current quantity of the item in the cart
     const currentQuantity = cart.find(item => item.id === product.id)?.quantity || 1;
-
-    toast(
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="relative flex-shrink-0">
-          <img
-            src={product.image}
-            alt={product.name}
-            className="h-10 w-10 rounded-md object-cover border border-gray-100"
-          />
-          {currentQuantity > 1 && (
-            <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-blue-500 text-white text-xs font-medium flex items-center justify-center">
-              {currentQuantity}
-            </div>
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="font-medium text-gray-900">Added to Cart</div>
-          <div className="text-sm text-gray-500 truncate pr-2">
-            {product.name}
-          </div>
-        </div>
-        <Link
-          href="/cart"
-          className="shrink-0 text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
-        >
-          View
-        </Link>
-      </div>
-    );
   };
 
   const removeFromCart = (productId: string) => {
@@ -90,7 +61,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
       }
       return prevCart.filter((item) => item.id !== productId);
     });
-    toast.success("Product removed from cart");
   };
 
   const clearCart = () => {
