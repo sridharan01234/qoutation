@@ -189,67 +189,117 @@ export default function CustomerProductsPage() {
       </div>
     );
   }
-
+  
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50">
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
+        {/* Header Section */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-playfair font-bold text-primary-700 mb-2">
+            Our Products
+          </h1>
+          <p className="text-secondary-600 font-inter">
+            Discover our curated collection of premium items
+          </p>
+        </div>
+
         {/* Search and Filters */}
-        <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-          <div className="flex flex-col lg:flex-row justify-between gap-4">
+        <div className="bg-white backdrop-blur-md bg-opacity-90 rounded-2xl shadow-lg p-6 mb-8
+                      border border-primary-100 hover:shadow-xl transition-shadow duration-300">
+          <div className="flex flex-col lg:flex-row justify-between gap-6">
             {/* Search Bar */}
-            <div className="relative flex-grow max-w-md">
+            <div className="relative flex-grow max-w-md group">
               <input
                 type="text"
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border rounded-lg bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+                className="w-full pl-12 pr-4 py-3.5 border-2 rounded-xl
+                         bg-primary-50/50 border-primary-200
+                         focus:bg-white focus:outline-none focus:border-primary-500
+                         transition-all duration-300 font-inter"
               />
-              <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 
+                                 text-primary-400 group-hover:text-primary-600
+                                 transition-colors duration-200" />
             </div>
 
             {/* Filters */}
             <div className="flex flex-wrap gap-4">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-4 py-3 border rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[160px]"
-              >
-                <option value="all">All Categories</option>
-                {/* Add your categories dynamically */}
-              </select>
+              <div className="relative">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="appearance-none px-4 py-3.5 pr-10 border-2 rounded-xl
+                           bg-secondary-50/50 border-secondary-200
+                           focus:border-secondary-500 focus:outline-none
+                           min-w-[180px] font-inter transition-all duration-300
+                           cursor-pointer hover:bg-secondary-100/50"
+                >
+                  <option value="all">All Categories</option>
+                  {/* Add your categories dynamically */}
+                </select>
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 
+                              text-secondary-500 pointer-events-none">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
 
-              <select
-                value={selectedSort}
-                onChange={(e) => setSelectedSort(e.target.value)}
-                className="px-4 py-3 border rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[160px]"
-              >
-                <option value="featured">Featured</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
-                <option value="name">Name</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={selectedSort}
+                  onChange={(e) => setSelectedSort(e.target.value)}
+                  className="appearance-none px-4 py-3.5 pr-10 border-2 rounded-xl
+                           bg-secondary-50/50 border-secondary-200
+                           focus:border-secondary-500 focus:outline-none
+                           min-w-[180px] font-inter transition-all duration-300
+                           cursor-pointer hover:bg-secondary-100/50"
+                >
+                  <option value="featured">Featured</option>
+                  <option value="price-asc">Price: Low to High</option>
+                  <option value="price-desc">Price: High to Low</option>
+                  <option value="name">Name</option>
+                </select>
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 
+                              text-secondary-500 pointer-events-none">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Products Grid */}
         {!filteredProducts || filteredProducts.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-gray-400 text-xl mb-4">No products found</div>
+          <div className="text-center py-16 bg-white rounded-2xl shadow-md">
+            <div className="text-primary-400 text-xl mb-4 font-poppins">
+              No products found
+            </div>
             <button
               onClick={() => {
                 setSearchQuery("");
                 setSelectedCategory("all");
               }}
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="inline-flex items-center px-4 py-2 text-sm font-medium
+                       text-primary-600 hover:text-white border-2 border-primary-500
+                       rounded-lg hover:bg-primary-500 transition-all duration-300
+                       focus:outline-none focus:ring-2 focus:ring-offset-2 
+                       focus:ring-primary-500"
             >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
               Clear filters
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {sortProducts(filteredProducts)
               .slice(0, page * ITEMS_PER_PAGE)
               .map((product: any) => (
@@ -265,7 +315,8 @@ export default function CustomerProductsPage() {
                 ref={loadMoreRef}
                 className="col-span-full flex justify-center p-4"
               >
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-10 w-10 border-4 
+                              border-primary-200 border-t-primary-600"></div>
               </div>
             )}
           </div>

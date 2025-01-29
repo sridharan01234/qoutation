@@ -1,9 +1,7 @@
-// components/ProductGrid.js
 "use client"
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 
-// Separate ProductCard into its own component
 const ProductCard = ({ product, onProductClick }) => {
   const { addToCart } = useCart();
   const [isHovered, setIsHovered] = useState(false);
