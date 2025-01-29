@@ -1,12 +1,13 @@
 // components/UserMenu.tsx
-'use client'
+"use client";
 
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { signOut, useSession } from 'next-auth/react'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import { toast } from 'react-toastify'
-import Avatar from './Avatar'
+import { useState, useRef, useEffect, useCallback } from "react";
+import { signOut, useSession } from "next-auth/react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import Link from "next/link"
+import Avatar from "./Avatar";
 import {
   UserCircleIcon as Profile,
   ShieldCheckIcon as Admin,
@@ -16,7 +17,7 @@ import {
   XMarkIcon as X,
   Bars3Icon as Menu,
   ArrowRightOnRectangleIcon as SignOut,
-} from '@heroicons/react/24/outline';
+} from "@heroicons/react/24/outline";
 interface Notification {
   id: string;
   title: string;
@@ -35,52 +36,126 @@ const mobileMenuStyles = {
   menuItem: `px-4 py-3 flex items-center space-x-3 hover:bg-gray-100 
              dark:hover:bg-gray-700 cursor-pointer
              border-b border-gray-200 dark:border-gray-700
-             last:border-b-0`
+             last:border-b-0`,
 };
 
 // Icons component
 const Icons = {
   Profile: () => (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+      />
     </svg>
   ),
   Settings: () => (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+      />
     </svg>
   ),
   Dashboard: () => (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+      />
     </svg>
   ),
   Admin: () => (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+      />
     </svg>
   ),
   SignOut: () => (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+      />
     </svg>
   ),
   Notifications: () => (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+      />
     </svg>
   ),
   Camera: () => (
-
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+      />
     </svg>
   ),
 };
 
 export default function UserMenu() {
-  const { data: session, update } = useSession();
+  const { data: session, status } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -96,12 +171,17 @@ export default function UserMenu() {
   useEffect(() => {
     if (session?.user) {
       const handleClickOutside = (event: MouseEvent) => {
-        if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        if (
+          menuRef.current &&
+          !menuRef.current.contains(event.target as Node)
+        ) {
           setIsOpen(false);
           setShowNotifications(false);
-        }};
-        document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+        }
+      };
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
       fetchNotifications();
       const cleanup = setupSSE();
       return () => {
@@ -288,6 +368,17 @@ export default function UserMenu() {
       : []),
   ];
 
+  if (!session) {
+    return (
+      <Link
+        href="/login"
+        className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      >
+        Login
+      </Link>
+    );
+  }
+
   return (
     <div className="relative flex items-center gap-4">
       {/* Notifications Bell */}
@@ -352,68 +443,68 @@ export default function UserMenu() {
 
       {/* User Menu */}
       <div className="relative">
-      <button
-        onClick={handleMenuToggle}
-        className="flex items-center space-x-3 focus:outline-none w-full"
-      >
-        {/* Avatar Section */}
-        <div 
-          className="relative w-10 h-10 rounded-full overflow-hidden group cursor-pointer"
-          onClick={handleAvatarClick}
+        <button
+          onClick={handleMenuToggle}
+          className="flex items-center space-x-3 focus:outline-none w-full"
         >
-          {session?.user?.image ? (
-            <>
-              <Image
-                src={session.user.image}
-                alt="Profile"
-                fill
-                className="object-cover"
-              />
-              {/* Loading Spinner */}
-              {loading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+          {/* Avatar Section */}
+          <div
+            className="relative w-10 h-10 rounded-full overflow-hidden group cursor-pointer"
+            onClick={handleAvatarClick}
+          >
+            {session?.user?.image ? (
+              <>
+                <Image
+                  src={session.user.image}
+                  alt="Profile"
+                  fill
+                  className="object-cover"
+                />
+                {/* Loading Spinner */}
+                {loading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  </div>
+                )}
+                {/* Camera Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity">
+                  <Camera className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-              )}
-              {/* Camera Overlay */}
-              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity">
-                <Camera  className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+              </>
+            ) : (
+              <div className="w-full h-full bg-gray-300 flex items-center justify-center group-hover:bg-gray-400 transition-colors">
+                <span className="text-xl text-gray-600">
+                  {session?.user?.name?.[0] || "U"}
+                </span>
               </div>
-            </>
-          ) : (
-            <div className="w-full h-full bg-gray-300 flex items-center justify-center group-hover:bg-gray-400 transition-colors">
-              <span className="text-xl text-gray-600">
-                {session?.user?.name?.[0] || "U"}
-              </span>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        {/* User Info - Hidden on Mobile */}
-        <div className="hidden md:block text-left">
-          <p className="text-sm font-medium text-gray-800">
-            {session?.user?.name}
-          </p>
-          <p className="text-xs text-gray-500">{session?.user?.email}</p>
-        </div>
+          {/* User Info - Hidden on Mobile */}
+          <div className="hidden md:block text-left">
+            <p className="text-sm font-medium text-gray-800">
+              {session?.user?.name}
+            </p>
+            <p className="text-xs text-gray-500">{session?.user?.email}</p>
+          </div>
 
-        {/* Add dropdown indicator */}
-        <div className="hidden md:flex items-center">
-          <ChevronDown  
-            className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
-              isOpen ? 'transform rotate-180' : ''
-            }`}
-          />
-        </div>
-      </button>
+          {/* Add dropdown indicator */}
+          <div className="hidden md:flex items-center">
+            <ChevronDown
+              className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
+                isOpen ? "transform rotate-180" : ""
+              }`}
+            />
+          </div>
+        </button>
 
-      {/* Mobile Menu Button - Visible only on mobile */}
-      <button 
-        className="md:hidden fixed top-4 right-4 z-50 p-2 rounded-full bg-white shadow-lg"
-        onClick={handleMenuToggle}
-      >
-        {isOpen ? <X /> : <Menu />}
-      </button>
+        {/* Mobile Menu Button - Visible only on mobile */}
+        <button
+          className="md:hidden fixed top-4 right-4 z-50 p-2 rounded-full bg-white shadow-lg"
+          onClick={handleMenuToggle}
+        >
+          {isOpen ? <X /> : <Menu />}
+        </button>
 
         <input
           ref={fileInputRef}
