@@ -4,7 +4,18 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { QuotationStatus } from "@prisma/client";
-import { FaSearch, FaFilter, FaSort, FaEye } from "react-icons/fa";
+import {
+  FaSearch,
+  FaFilter,
+  FaSort,
+  FaEye,
+  FaPlus,
+  FaChevronDown,
+  FaFileAlt,
+  FaChevronLeft,
+  FaChevronRight,
+  FaEdit
+} from "react-icons/fa";
 import { toast } from "react-toastify";
 
 interface Quotation {
@@ -109,105 +120,183 @@ export default function QuotationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-secondary-50 p-4 sm:p-8">
       <div className="max-w-7xl mx-auto">
+        {/* Header Section */}
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h1 className="text-2xl font-bold text-gray-900">Quotations</h1>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-secondary-700">
+              Quotations
+            </h1>
+            <p className="text-secondary-500 mt-1">
+              Manage and track your quotations
+            </p>
+          </div>
           <button
             onClick={() => router.push("/quotations/new")}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg
+            hover:bg-primary-700 transition-all duration-200 
+            focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+            shadow-sm hover:shadow-md active:transform active:scale-95"
           >
+            <FaPlus className="mr-2 text-sm" />
             Create New Quotation
           </button>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow mb-6 p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="relative">
-              <FaSearch className="absolute left-3 top-3 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search quotations..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+        {/* Filters Section */}
+        <div className="bg-white rounded-lg shadow-sm border border-secondary-200 mb-6">
+          <div className="p-4 border-b border-secondary-200">
+            <h2 className="text-secondary-600 font-medium">Filters</h2>
+          </div>
+          <div className="p-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Search Input */}
+              <div className="relative group">
+                <label htmlFor="search" className="sr-only">
+                  Search quotations
+                </label>
+                <FaSearch
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-400 
+                group-focus-within:text-primary-500 transition-colors"
+                />
+                <input
+                  id="search"
+                  type="search"
+                  placeholder="Search quotations..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 w-full border border-secondary-200 rounded-lg
+                  focus:ring-2 focus:ring-primary-500 focus:border-primary-500 
+                  transition-all duration-200 placeholder-secondary-400"
+                />
+              </div>
 
-            <div className="relative">
-              <FaFilter className="absolute left-3 top-3 text-gray-400" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Statuses</option>
-                {Object.values(QuotationStatus).map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </div>
+              {/* Status Filter */}
+              <div className="relative group">
+                <label htmlFor="status" className="sr-only">
+                  Filter by status
+                </label>
+                <FaFilter
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-400 
+                group-focus-within:text-primary-500 transition-colors"
+                />
+                <select
+                  id="status"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="pl-10 pr-8 py-2 w-full border border-secondary-200 rounded-lg
+                  focus:ring-2 focus:ring-primary-500 focus:border-primary-500 
+                  transition-all duration-200 appearance-none bg-white"
+                >
+                  <option value="all">All Statuses</option>
+                  {Object.values(QuotationStatus).map((status) => (
+                    <option key={status} value={status}>
+                      {status.charAt(0).toUpperCase() +
+                        status.slice(1).toLowerCase()}
+                    </option>
+                  ))}
+                </select>
+                <FaChevronDown
+                  className="absolute right-3 top-1/2 -translate-y-1/2 
+                text-secondary-400 pointer-events-none"
+                />
+              </div>
 
-            <div className="relative">
-              <FaSort className="absolute left-3 top-3 text-gray-400" />
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="createdAt">Created Date</option>
-                <option value="quotationNumber">Quotation Number</option>
-              </select>
-            </div>
+              {/* Sort By */}
+              <div className="relative group">
+                <label htmlFor="sortBy" className="sr-only">
+                  Sort by
+                </label>
+                <FaSort
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-400 
+                group-focus-within:text-primary-500 transition-colors"
+                />
+                <select
+                  id="sortBy"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="pl-10 pr-8 py-2 w-full border border-secondary-200 rounded-lg
+                  focus:ring-2 focus:ring-primary-500 focus:border-primary-500 
+                  transition-all duration-200 appearance-none bg-white"
+                >
+                  <option value="createdAt">Created Date</option>
+                  <option value="quotationNumber">Quotation Number</option>
+                  <option value="totalAmount">Total Amount</option>
+                </select>
+                <FaChevronDown
+                  className="absolute right-3 top-1/2 -translate-y-1/2 
+                text-secondary-400 pointer-events-none"
+                />
+              </div>
 
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
-              className="pl-4 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="desc">Newest First</option>
-              <option value="asc">Oldest First</option>
-            </select>
+              {/* Sort Order */}
+              <div className="relative group">
+                <label htmlFor="sortOrder" className="sr-only">
+                  Sort order
+                </label>
+                <select
+                  id="sortOrder"
+                  value={sortOrder}
+                  onChange={(e) =>
+                    setSortOrder(e.target.value as "asc" | "desc")
+                  }
+                  className="pl-4 pr-8 py-2 w-full border border-secondary-200 rounded-lg
+                  focus:ring-2 focus:ring-primary-500 focus:border-primary-500 
+                  transition-all duration-200 appearance-none bg-white"
+                >
+                  <option value="desc">Newest First</option>
+                  <option value="asc">Oldest First</option>
+                </select>
+                <FaChevronDown
+                  className="absolute right-3 top-1/2 -translate-y-1/2 
+                text-secondary-400 pointer-events-none"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Quotations Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        {/* Table Section */}
+        <div className="bg-white rounded-lg shadow-sm border border-secondary-50 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-secondary-200">
+              <thead className="bg-secondary-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
                     Quotation Number
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
                     Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-secondary-500 uppercase tracking-wider">
+                    Total Amount
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-secondary-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-secondary-200">
                 {quotations.map((quotation) => (
-                  <tr key={quotation.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <tr
+                    key={quotation.id}
+                    className="hover:bg-secondary-50 transition-colors duration-150"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-secondary-700">
                       {quotation.quotationNumber}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-500">
                       {new Date(quotation.date).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           quotation.status === "DRAFT"
-                            ? "bg-gray-100 text-gray-800"
+                            ? "bg-secondary-100 text-secondary-800"
                             : quotation.status === "PENDING"
                             ? "bg-yellow-100 text-yellow-800"
                             : quotation.status === "APPROVED"
@@ -215,18 +304,40 @@ export default function QuotationsPage() {
                             : "bg-red-100 text-red-800"
                         }`}
                       >
-                        {quotation.status}
+                        {quotation.status.charAt(0).toUpperCase() +
+                          quotation.status.slice(1).toLowerCase()}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                      <button
-                        onClick={() =>
-                          router.push(`/quotations/${quotation.id}`)
-                        }
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        <FaEye className="inline-block" />
-                      </button>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-700 text-right">
+                      {quotation.currency} {quotation.totalAmount.toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <div className="flex items-center justify-center space-x-2">
+                        <button
+                          onClick={() =>
+                            router.push(`/quotations/${quotation.id}`)
+                          }
+                          className="inline-flex items-center p-2 text-secondary-500 hover:text-primary-600 
+                    hover:bg-primary-50 rounded-lg transition-all duration-200
+                    focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1"
+                          title="View Details"
+                        >
+                          <span className="sr-only">View Details</span>
+                          <FaEye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() =>
+                            router.push(`/quotations/${quotation.id}/edit`)
+                          }
+                          className="inline-flex items-center p-2 text-secondary-500 hover:text-primary-600 
+                    hover:bg-primary-50 rounded-lg transition-all duration-200
+                    focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1"
+                          title="Edit Quotation"
+                        >
+                          <span className="sr-only">Edit Quotation</span>
+                          <FaEdit className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -236,29 +347,57 @@ export default function QuotationsPage() {
         </div>
 
         {/* Pagination */}
-        <div className="mt-4 flex items-center justify-between">
-          <div className="text-sm text-gray-700">
-            Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-            {Math.min(pagination.page * pagination.limit, pagination.total)} of{" "}
-            {pagination.total} results
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-sm text-secondary-600">
+            Showing{" "}
+            <span className="font-medium">
+              {(pagination.page - 1) * pagination.limit + 1}
+            </span>{" "}
+            to{" "}
+            <span className="font-medium">
+              {Math.min(pagination.page * pagination.limit, pagination.total)}
+            </span>{" "}
+            of <span className="font-medium">{pagination.total}</span> results
           </div>
-          <div className="flex items-center space-x-2">
+          <nav className="flex items-center space-x-1" aria-label="Pagination">
+            <button
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={pagination.page === 1}
+              className="p-2 rounded-md border border-secondary-200 bg-white text-secondary-500
+              hover:bg-secondary-50 disabled:opacity-50 disabled:cursor-not-allowed
+              transition-colors duration-200"
+            >
+              <span className="sr-only">Previous page</span>
+              <FaChevronLeft className="h-5 w-5" />
+            </button>
+
             {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(
               (page) => (
                 <button
                   key={page}
                   onClick={() => handlePageChange(page)}
-                  className={`px-3 py-1 rounded ${
+                  className={`px-4 py-2 rounded-md transition-colors duration-200 ${
                     pagination.page === page
-                      ? "bg-blue-600 text-white"
-                      : "text-blue-600 hover:bg-blue-50"
+                      ? "bg-primary-600 text-white"
+                      : "border border-secondary-200 bg-white text-secondary-700 hover:bg-secondary-50"
                   }`}
                 >
                   {page}
                 </button>
               )
             )}
-          </div>
+
+            <button
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={pagination.page === pagination.totalPages}
+              className="p-2 rounded-md border border-secondary-200 bg-white text-secondary-500
+              hover:bg-secondary-50 disabled:opacity-50 disabled:cursor-not-allowed
+              transition-colors duration-200"
+            >
+              <span className="sr-only">Next page</span>
+              <FaChevronRight className="h-5 w-5" />
+            </button>
+          </nav>
         </div>
       </div>
     </div>

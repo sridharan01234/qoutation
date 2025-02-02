@@ -1,4 +1,3 @@
-// providers/AuthProvider.tsx
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
@@ -47,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!session && isAuthRoute) {
       router.push('/login')
     } else if (session && isPublicRoute) {
-      router.push('/dashboard')
+      router.push('/')
     }
   }, [session, status, pathname, router])
 
