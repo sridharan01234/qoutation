@@ -185,12 +185,6 @@ export default function ProductDetails() {
                     {product.name}
                   </h1>
                   <div className="flex items-baseline space-x-4">
-                    <span className="text-4xl font-bold text-gray-900">
-                      {new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                      }).format(product.price)}
-                    </span>
                     {product.status === "IN_STOCK" && (
                       <span className="text-sm text-green-600 font-medium">
                         In Stock ({product.stock} available)

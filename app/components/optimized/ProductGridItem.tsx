@@ -86,16 +86,6 @@ const ProductGridItem = memo(function ProductGridItem({
 
         {/* Price and action */}
         <div className="flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-lg font-bold text-gray-900">
-              ${product.price.toFixed(2)}
-            </span>
-            {product.originalPrice && (
-              <span className="text-sm text-gray-500 line-through">
-                ${product.originalPrice.toFixed(2)}
-              </span>
-            )}
-          </div>
           <button
             onClick={() => onAddToCart(product)}
             className="bg-blue-600 text-white px-4 py-2 text-sm font-medium rounded-lg 
