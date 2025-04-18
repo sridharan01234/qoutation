@@ -1,26 +1,34 @@
-import { Dialog, Transition, DialogPanel, TransitionChild, DialogTitle } from '@headlessui/react';
-import { Fragment, useState } from 'react';
-import { format } from 'date-fns';
-import { Quotation, Activity, Attachment, QuotationItem } from '../types/index';
-import axios from 'axios';
-import { toast } from 'react-toastify';
-import { NotificationService } from '../lib/services/NotificationService';
+import {
+  Dialog,
+  Transition,
+  DialogPanel,
+  TransitionChild,
+  DialogTitle,
+} from "@headlessui/react";
+import { Fragment, useState } from "react";
+import { format } from "date-fns";
+import { Quotation, Activity, Attachment, QuotationItem } from "../types/index";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { NotificationService } from "../lib/services/NotificationService";
 
 interface QuotationDetailsModalProps {
-  quotation: Quotation & {
-    items: (QuotationItem & {
-      product: {
-        name: string;
-        sku: string;
-      };
-    })[];
-    activities: Activity[];
-    attachments: Attachment[];
-    creator: {
-      name: string;
-      email: string;
-    };
-  } | null;
+  quotation:
+    | (Quotation & {
+        items: (QuotationItem & {
+          product: {
+            name: string;
+            sku: string;
+          };
+        })[];
+        activities: Activity[];
+        attachments: Attachment[];
+        creator: {
+          name: string;
+          email: string;
+        };
+      })
+    | null;
   onClose: () => void;
   isAdmin?: boolean;
   onStatusChange?: () => void;
@@ -37,16 +45,16 @@ export default function QuotationDetailsModal({
   if (!quotation) return null;
 
   const statusColors = {
-    DRAFT: 'bg-gray-100 text-gray-800',
-    PENDING: 'bg-yellow-100 text-yellow-800',
-    APPROVED: 'bg-green-100 text-green-800',
-    REJECTED: 'bg-red-100 text-red-800',
-    EXPIRED: 'bg-orange-100 text-orange-800',
-    CONVERTED: 'bg-blue-100 text-blue-800',
-    CANCELLED: 'bg-gray-100 text-gray-800',
+    DRAFT: "bg-gray-100 text-gray-800",
+    PENDING: "bg-yellow-100 text-yellow-800",
+    APPROVED: "bg-green-100 text-green-800",
+    REJECTED: "bg-red-100 text-red-800",
+    EXPIRED: "bg-orange-100 text-orange-800",
+    CONVERTED: "bg-blue-100 text-blue-800",
+    CANCELLED: "bg-gray-100 text-gray-800",
   };
 
-  const handleAction = async (action: 'approve' | 'reject') => {
+  const handleAction = async (action: "approve" | "reject") => {
     try {
       setLoading(true);
       const response = await axios.put(
@@ -54,11 +62,11 @@ export default function QuotationDetailsModal({
         { action },
         {
           headers: {
-            'Content-Type': 'application/json',
-          }
+            "Content-Type": "application/json",
+          },
         }
       );
-      
+
       if (response.data.success) {
         const notificationService = new NotificationService(
           (data) => {
@@ -82,21 +90,28 @@ export default function QuotationDetailsModal({
             data: {
               quotationId: quotation.id,
               quotationNumber: quotation.quotationNumber,
-              status: action === 'approve' ? 'APPROVED' : 'REJECTED',
+              status: action === "approve" ? "APPROVED" : "REJECTED",
             },
           });
         } catch (notificationError) {
-          console.error('Failed to send notification:', notificationError);
+          console.error("Failed to send notification:", notificationError);
           // Continue with success flow even if notification fails
-          toast.success(`Quotation ${action === 'approve' ? 'approved' : 'rejected'} successfully`);
+          toast.success(
+            `Quotation ${
+              action === "approve" ? "approved" : "rejected"
+            } successfully`
+          );
           onStatusChange?.();
           onClose();
         }
       } else {
-        throw new Error(response.data.error || 'Failed to process quotation');
+        throw new Error(response.data.error || "Failed to process quotation");
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.error || error.message || 'An unexpected error occurred';
+      const errorMessage =
+        error.response?.data?.error ||
+        error.message ||
+        "An unexpected error occurred";
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -155,26 +170,35 @@ export default function QuotationDetailsModal({
                   {/* Basic Information */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <h4 className="text-sm font-medium text-gray-500">Created By</h4>
+                      <h4 className="text-sm font-medium text-gray-500">
+                        Created By
+                      </h4>
                       <p className="mt-1">
                         {quotation.creator.name}
                         <br />
-                        <span className="text-sm text-gray-500">{quotation.creator.email}</span>
+                        <span className="text-sm text-gray-500">
+                          {quotation.creator.email}
+                        </span>
                       </p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium text-gray-500">Dates</h4>
+                      <h4 className="text-sm font-medium text-gray-500">
+                        Dates
+                      </h4>
                       <p className="mt-1">
-                        Created: {format(new Date(quotation.date), 'PPP')}
+                        Created: {format(new Date(quotation.date), "PPP")}
                         <br />
-                        Valid Until: {format(new Date(quotation.validUntil), 'PPP')}
+                        Valid Until:{" "}
+                        {format(new Date(quotation.validUntil), "PPP")}
                       </p>
                     </div>
                   </div>
 
                   {/* Items Table */}
                   <div className="mt-6">
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Items</h4>
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">
+                      Items
+                    </h4>
                     <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -184,12 +208,6 @@ export default function QuotationDetailsModal({
                             </th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Quantity
-                            </th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Unit Price
-                            </th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Discount
                             </th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Total
@@ -212,18 +230,9 @@ export default function QuotationDetailsModal({
                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
                                 {item.quantity}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
-                                {new Intl.NumberFormat('en-US', {
-                                  style: 'currency',
-                                  currency: quotation.currency,
-                                }).format(item.unitPrice)}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
-                                {item.discount}%
-                              </td>
                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                                {new Intl.NumberFormat('en-US', {
-                                  style: 'currency',
+                                {new Intl.NumberFormat("en-US", {
+                                  style: "currency",
                                   currency: quotation.currency,
                                 }).format(item.total)}
                               </td>
@@ -235,6 +244,46 @@ export default function QuotationDetailsModal({
                   </div>
                 </div>
 
+                {/* Activity Log Section - Add this before the Action Buttons section */}
+                <div className="mt-6">
+                  <h4 className="text-sm font-medium text-gray-500 mb-2">
+                    Activity Log
+                  </h4>
+                  <div className="space-y-3">
+                    {quotation.activities.length > 0 ? (
+                      quotation.activities.map((activity) => (
+                        <div
+                          key={activity.id}
+                          className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm font-medium text-gray-900">
+                                {activity.type}
+                              </p>
+                              <span className="text-xs text-gray-500">
+                                {format(new Date(activity.createdAt), "PPp")}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-sm text-gray-600">
+                              {activity.description}
+                            </p>
+                            {activity.user && (
+                              <p className="mt-1 text-xs text-gray-500">
+                                By: {activity.user.name}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500 italic">
+                        No activities recorded
+                      </p>
+                    )}
+                  </div>
+                </div>
+
                 {/* Action Buttons */}
                 <div className="mt-6 flex justify-end space-x-3">
                   {isAdmin && quotation.status === "PENDING" && (
@@ -242,18 +291,18 @@ export default function QuotationDetailsModal({
                       <button
                         type="button"
                         disabled={loading}
-                        onClick={() => handleAction('reject')}
+                        onClick={() => handleAction("reject")}
                         className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
                       >
-                        {loading ? 'Processing...' : 'Reject'}
+                        {loading ? "Processing..." : "Reject"}
                       </button>
                       <button
                         type="button"
                         disabled={loading}
-                        onClick={() => handleAction('approve')}
+                        onClick={() => handleAction("approve")}
                         className="inline-flex justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
                       >
-                        {loading ? 'Processing...' : 'Approve'}
+                        {loading ? "Processing..." : "Approve"}
                       </button>
                     </>
                   )}

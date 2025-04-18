@@ -77,7 +77,6 @@ export default function AdminQuotationOverview() {
       const sortFieldMapping: Record<string, string> = {
         date: "createdAt",
         number: "quotationNumber",
-        amount: "totalAmount",
         status: "status",
       };
 
@@ -179,7 +178,6 @@ export default function AdminQuotationOverview() {
                     Date: format(new Date(q.date), "yyyy-MM-dd"),
                     Status: q.status,
                     User: q.user.name || q.user.email,
-                    Amount: `${q.currency} ${q.totalAmount}`,
                   }));
                   // Add CSV export logic here
                 }}
@@ -262,7 +260,6 @@ export default function AdminQuotationOverview() {
               >
                 <option value="date">Date</option>
                 <option value="quotationNumber">Quotation Number</option>
-                <option value="totalAmount">Amount</option>
                 <option value="status">Status</option>
               </select>
             </div>
@@ -298,12 +295,6 @@ export default function AdminQuotationOverview() {
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
                     Status
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Amount
                   </th>
                   <th
                     scope="col"
@@ -357,11 +348,9 @@ export default function AdminQuotationOverview() {
                           {quotation.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        {quotation.currency} {quotation.totalAmount.toFixed(2)}
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="flex justify-center space-x-2">
+                          
                           <button
                             onClick={() => {
                               setSelectedQuotation(quotation);
@@ -374,15 +363,6 @@ export default function AdminQuotationOverview() {
                           </button>
                           <button
                             onClick={() =>
-                              router.push(`/quotations/${quotation.id}/edit`)
-                            }
-                            className="text-green-600 hover:text-green-900"
-                            title="Edit"
-                          >
-                            <FaEdit className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() =>
                               window.open(
                                 `/api/quotations/${quotation.id}/pdf`,
                                 "_blank"
@@ -392,16 +372,6 @@ export default function AdminQuotationOverview() {
                             title="Download PDF"
                           >
                             <FaFileDownload className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedQuotation(quotation);
-                              setIsDetailsModalOpen(true);
-                            }}
-                            className="text-purple-600 hover:text-purple-900"
-                            title="View History"
-                          >
-                            <FaHistory className="h-4 w-4" />
                           </button>
                         </div>
                       </td>
