@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { FaShoppingCart } from "react-icons/fa";
+import { cardHoverVariants, buttonHoverVariants } from "../utils/animations";
 
 interface ProductGridItemProps {
   product: any;
@@ -13,25 +14,34 @@ export default function ProductGridItem({ product, onNavigate, onAddToCart }: Pr
   return (
     <motion.div
       key={product.id}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -5 }}
-      transition={{ duration: 0.3 }}
+      variants={cardHoverVariants}
+      initial="initial"
+      whileHover="hover"
+      whileTap={{ scale: 0.98 }}
       onClick={() => onNavigate(product.id)}
-      className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
+      className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer group"
     >
-      <div className="relative aspect-square bg-gray-100">
+      <div className="relative aspect-square bg-gray-100 overflow-hidden">
         {product.image ? (
-          <Image
-            src={product.image}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-          />
+          <motion.div
+            whileHover={{ scale: 1.1 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="w-full h-full"
+          >
+            <Image
+              src={product.image}
+              alt={product.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+            />
+          </motion.div>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <svg
+            <motion.svg
+              initial={{ scale: 0.8, opacity: 0.5 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.3 }}
               className="w-16 h-16 text-gray-300"
               fill="none"
               stroke="currentColor"
@@ -43,7 +53,7 @@ export default function ProductGridItem({ product, onNavigate, onAddToCart }: Pr
                 strokeWidth="2"
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
               />
-            </svg>
+            </motion.svg>
           </div>
         )}
         {product.status !== "IN_STOCK" && (
@@ -79,8 +89,10 @@ export default function ProductGridItem({ product, onNavigate, onAddToCart }: Pr
           {product.description}
         </p>
         <div className="flex items-center justify-between mt-auto">
-
-          <button
+          <motion.button
+            variants={buttonHoverVariants}
+            whileHover="hover"
+            whileTap="tap"
             onClick={(e) => {
               e.stopPropagation();
               onAddToCart(product);
@@ -92,8 +104,14 @@ export default function ProductGridItem({ product, onNavigate, onAddToCart }: Pr
                 : "bg-gray-200 cursor-not-allowed text-gray-400"
             }`}
           >
-            <FaShoppingCart className="w-5 h-5" />
-          </button>
+            <motion.div
+              animate={{ rotate: product.status === "IN_STOCK" ? 0 : 0 }}
+              whileHover={{ rotate: product.status === "IN_STOCK" ? 15 : 0 }}
+              transition={{ type: "spring", stiffness: 400, damping: 10 }}
+            >
+              <FaShoppingCart className="w-5 h-5" />
+            </motion.div>
+          </motion.button>
         </div>
       </div>
     </motion.div>

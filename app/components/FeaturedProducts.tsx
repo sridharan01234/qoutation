@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import ProductGridItem from "../components/ProductGridItem";
 import { useCart } from "../context/CartContext";
 import Link from "next/link";
+import { 
+  fadeInUpVariants, 
+  staggerContainerVariants,
+  staggerItemVariants,
+  buttonHoverVariants,
+  textRevealVariants,
+  lineGrowVariants
+} from "../utils/animations";
 
 interface Product {
   id: string;
@@ -144,34 +152,35 @@ export default function FeaturedProducts({
   }
 
   return (
-    <section className="py-16 bg-gradient-to-br from-primary-50 via-white to-secondary-50">
+    <section className="py-16 bg-gradient-to-br from-primary-50 via-white to-secondary-50 overflow-hidden">
       <div className="container mx-auto px-4">
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          variants={fadeInUpVariants}
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true, margin: "-100px" }}
           className="text-center mb-16"
         >
-          <h2
+          <motion.h2
+            variants={textRevealVariants}
             className="text-5xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 
                           bg-clip-text text-transparent mb-6"
           >
             Featured Products
-          </h2>
+          </motion.h2>
           <div className="flex items-center justify-center gap-3">
             <motion.div
-              initial={{ width: 0 }}
-              whileInView={{ width: "2rem" }}
+              variants={lineGrowVariants}
               className="h-1 rounded-full bg-primary-400"
             />
             <motion.div
-              initial={{ width: 0 }}
-              whileInView={{ width: "4rem" }}
+              variants={lineGrowVariants}
+              transition={{ delay: 0.2 }}
               className="h-1 rounded-full bg-secondary-400"
             />
             <motion.div
-              initial={{ width: 0 }}
-              whileInView={{ width: "2rem" }}
+              variants={lineGrowVariants}
+              transition={{ delay: 0.4 }}
               className="h-1 rounded-full bg-primary-400"
             />
           </div>
@@ -182,9 +191,11 @@ export default function FeaturedProducts({
             {products.length > productsPerSlide && (
               <>
                 <motion.button
-                  initial={{ opacity: 0, x: -20 }}
+                  variants={buttonHoverVariants}
+                  initial="initial"
                   animate={{ opacity: 1, x: 0 }}
-                  whileHover={{ scale: 1.05, x: 5 }}
+                  whileHover="hover"
+                  whileTap="tap"
                   onClick={prevSlide}
                   className="absolute left-0 top-1/2 z-10 -translate-y-1/2 
                              bg-gradient-to-r from-primary-500 to-primary-600
@@ -214,9 +225,11 @@ export default function FeaturedProducts({
                 </motion.button>
 
                 <motion.button
-                  initial={{ opacity: 0, x: 20 }}
+                  variants={buttonHoverVariants}
+                  initial="initial"
                   animate={{ opacity: 1, x: 0 }}
-                  whileHover={{ scale: 1.05, x: -5 }}
+                  whileHover="hover"
+                  whileTap="tap"
                   onClick={nextSlide}
                   className="absolute right-0 top-1/2 z-10 -translate-y-1/2
                              bg-gradient-to-l from-secondary-500 to-secondary-600
