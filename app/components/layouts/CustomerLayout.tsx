@@ -9,6 +9,13 @@ import Link from "next/link";
 import { memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { 
+  fadeInUpVariants, 
+  staggerContainerVariants,
+  staggerItemVariants,
+  buttonHoverVariants,
+  springConfig
+} from "../../utils/animations";
 
 const navigation = [
   { name: "Home", href: "/" },
@@ -28,42 +35,69 @@ interface CustomerLayoutProps {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      onClick={onClose}
     >
       <motion.div
         className="fixed inset-y-0 left-0 w-64 bg-white shadow-2xl"
         initial={{ x: "-100%" }}
         animate={{ x: 0 }}
         exit={{ x: "-100%" }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        transition={springConfig.gentle}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="p-4 space-y-4">
-          <div className="flex items-center justify-between">
+          <motion.div 
+            className="flex items-center justify-between"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             <Link href="/" className="text-xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 
                                     bg-clip-text text-transparent">
               Suppliez
             </Link>
-            <button
+            <motion.button
+              variants={buttonHoverVariants}
+              whileHover="hover"
+              whileTap="tap"
               onClick={onClose}
               className="p-2 rounded-lg text-primary-500 hover:text-primary-700
                        hover:bg-primary-50 transition-all duration-300"
             >
               <XMarkIcon className="h-6 w-6" />
-            </button>
-          </div>
-          <nav className="space-y-2">
-            {navigation.map((item) => (
-              <Link
+            </motion.button>
+          </motion.div>
+          <motion.nav 
+            variants={staggerContainerVariants}
+            initial="initial"
+            animate="animate"
+            transition={{ delay: 0.3 }}
+            className="space-y-2"
+          >
+            {navigation.map((item, index) => (
+              <motion.div
                 key={item.name}
-                href={item.href}
-                className="block px-4 py-2 text-base font-medium text-primary-600 
-                         rounded-lg hover:bg-primary-50 hover:text-primary-900
-                         transition-all duration-300"
-                onClick={onClose}
+                variants={staggerItemVariants}
+                whileHover={{ scale: 1.02, x: 8 }}
+                whileTap={{ scale: 0.98 }}
               >
-                {item.name}
-              </Link>
+                <Link
+                  href={item.href}
+                  className="block px-4 py-2 text-base font-medium text-primary-600 
+                           rounded-lg hover:bg-primary-50 hover:text-primary-900
+                           transition-all duration-300 relative overflow-hidden group"
+                  onClick={onClose}
+                >
+                  <span className="relative z-10">{item.name}</span>
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-primary-50 to-secondary-50 opacity-0"
+                    whileHover={{ opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                  />
+                </Link>
+              </motion.div>
             ))}
-          </nav>
+          </motion.nav>
         </div>
       </motion.div>
     </motion.div>
@@ -102,21 +136,28 @@ const CustomerLayout = memo(function CustomerLayout({
             
             <div className="hidden md:ml-8 md:flex md:space-x-8">
               {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="relative group inline-flex items-center px-1 pt-1 text-sm font-medium 
-                           text-primary-600 transition-all duration-300
-                           hover:text-primary-900"
-                >
-                  {item.name}
-                  <motion.div 
-                    className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r 
-                             from-primary-400 to-secondary-400 group-hover:w-full 
-                             transition-all duration-300"
-                    whileHover={{ width: "100%" }}
-                  />
-                </Link>
+                <motion.div key={item.name} className="relative">
+                  <Link
+                    href={item.href}
+                    className="relative group inline-flex items-center px-1 pt-1 text-sm font-medium 
+                             text-primary-600 transition-all duration-300
+                             hover:text-primary-900"
+                  >
+                    <motion.span
+                      whileHover={{ y: -2 }}
+                      transition={springConfig.snappy}
+                    >
+                      {item.name}
+                    </motion.span>
+                    <motion.div 
+                      className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r 
+                               from-primary-400 to-secondary-400"
+                      initial={{ width: 0 }}
+                      whileHover={{ width: "100%" }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                    />
+                  </Link>
+                </motion.div>
               ))}
             </div>
           </div>
@@ -177,9 +218,10 @@ const CustomerLayout = memo(function CustomerLayout({
   
     {/* Main Content */}
     <motion.main 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      variants={fadeInUpVariants}
+      initial="initial"
+      animate="animate"
+      transition={{ duration: 0.6, delay: 0.2 }}
       className={cn("flex-grow", className)}
     >
       {children}

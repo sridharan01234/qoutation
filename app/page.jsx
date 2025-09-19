@@ -4,7 +4,21 @@ import { fetchProducts } from "./services/api";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 import FeaturedProducts from "./components/FeaturedProducts";
 import { motion } from "framer-motion";
+import { 
+  fadeInUpVariants, 
+  fadeInLeftVariants, 
+  fadeInRightVariants,
+  staggerContainerVariants,
+  staggerItemVariants,
+  buttonHoverVariants,
+  cardHoverVariants,
+  textRevealVariants,
+  lineGrowVariants,
+  floatingVariants,
+  pageTransitionVariants
+} from "./utils/animations";
 
+// Legacy variants for backward compatibility - will be replaced gradually
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
@@ -143,37 +157,74 @@ profitable for all`;
     <div className="min-h-screen bg-gray-50">
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50">
         {/* Hero Section */}
-        <section className="relative bg-gradient-to-r from-primary-900 to-secondary-900 text-white">
+        <section className="relative bg-gradient-to-r from-primary-900 to-secondary-900 text-white overflow-hidden">
           <div className="relative min-h-[80vh] w-full overflow-hidden">
-            <div className="absolute inset-0">
+            <motion.div 
+              className="absolute inset-0"
+              initial={{ scale: 1.1, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+            >
               <img
                 src="https://images.unsplash.com/photo-1586528116493-d1f6ad380b33"
                 alt="Supply Chain Management"
                 className="w-full h-full object-cover opacity-40"
               />
-            </div>
+            </motion.div>
             <div className="absolute inset-0 bg-gradient-to-r from-primary-900/90 to-secondary-900/90" />
+            
+            {/* Floating decorative elements */}
+            <motion.div
+              variants={floatingVariants}
+              animate="animate"
+              className="absolute top-20 right-20 w-20 h-20 rounded-full bg-primary-400/20 backdrop-blur-sm"
+            />
+            <motion.div
+              variants={floatingVariants}
+              animate="animate"
+              transition={{ delay: 2 }}
+              className="absolute bottom-40 left-10 w-16 h-16 rounded-full bg-secondary-400/20 backdrop-blur-sm"
+            />
 
             <div className="relative h-full flex items-center">
               <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20">
                 <div className="grid lg:grid-cols-2 gap-12 items-center">
                   <motion.div
-                    initial={{ opacity: 0, x: -50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.8 }}
+                    variants={fadeInLeftVariants}
+                    initial="initial"
+                    animate="animate"
+                    transition={{ delay: 0.3 }}
                   >
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary-100 to-secondary-100 leading-tight">
+                    <motion.h1 
+                      variants={textRevealVariants}
+                      initial="initial"
+                      animate="animate"
+                      transition={{ delay: 0.6 }}
+                      className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary-100 to-secondary-100 leading-tight"
+                    >
                       Revolutionizing Your Supply Chain Management
-                    </h1>
-                    <p className="text-xl sm:text-2xl mb-8 text-primary-100/90 leading-relaxed">
+                    </motion.h1>
+                    <motion.p 
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.9, duration: 0.8 }}
+                      className="text-xl sm:text-2xl mb-8 text-primary-100/90 leading-relaxed"
+                    >
                       Transform your procurement process with our innovative
                       solutions. Streamline operations, reduce costs, and drive
                       business growth.
-                    </p>
-                    <div className="flex flex-wrap gap-4">
+                    </motion.p>
+                    <motion.div 
+                      initial={{ opacity: 0, y: 40 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 1.2, duration: 0.8 }}
+                      className="flex flex-wrap gap-4"
+                    >
                       <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        variants={buttonHoverVariants}
+                        initial="initial"
+                        whileHover="hover"
+                        whileTap="tap"
                         className="bg-gradient-to-r from-primary-500 to-secondary-500 text-white 
                          px-8 py-4 rounded-lg font-semibold transition-all duration-300
                          hover:from-primary-600 hover:to-secondary-600
@@ -182,8 +233,10 @@ profitable for all`;
                         Get Started
                       </motion.button>
                       <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        variants={buttonHoverVariants}
+                        initial="initial"
+                        whileHover="hover"
+                        whileTap="tap"
                         className="bg-white/10 backdrop-blur-sm text-white 
                          px-8 py-4 rounded-lg font-semibold transition-all duration-300
                          hover:bg-white/20 border border-white/30
@@ -191,57 +244,100 @@ profitable for all`;
                       >
                         Learn More
                       </motion.button>
-                    </div>
+                    </motion.div>
 
-                    <div className="mt-12 grid grid-cols-3 gap-6">
+                    <motion.div 
+                      variants={staggerContainerVariants}
+                      initial="initial"
+                      animate="animate"
+                      transition={{ delay: 1.5 }}
+                      className="mt-12 grid grid-cols-3 gap-6"
+                    >
                       <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/10"
+                        variants={staggerItemVariants}
+                        whileHover={{ scale: 1.05, rotateY: 5 }}
+                        className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/10 
+                                 hover:bg-white/20 transition-all duration-300 hover:border-white/30"
                       >
-                        <h3 className="text-2xl font-bold text-primary-100">
+                        <motion.h3 
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: 1.8, type: "spring", stiffness: 200, damping: 10 }}
+                          className="text-2xl font-bold text-primary-100"
+                        >
                           500+
-                        </h3>
+                        </motion.h3>
                         <p className="text-white/80">Suppliers</p>
                       </motion.div>
                       <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/10"
+                        variants={staggerItemVariants}
+                        whileHover={{ scale: 1.05, rotateY: 5 }}
+                        className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/10
+                                 hover:bg-white/20 transition-all duration-300 hover:border-white/30"
                       >
-                        <h3 className="text-2xl font-bold text-primary-100">
+                        <motion.h3 
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: 2.0, type: "spring", stiffness: 200, damping: 10 }}
+                          className="text-2xl font-bold text-primary-100"
+                        >
                           98%
-                        </h3>
+                        </motion.h3>
                         <p className="text-white/80">Success Rate</p>
                       </motion.div>
                       <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.6 }}
-                        className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/10"
+                        variants={staggerItemVariants}
+                        whileHover={{ scale: 1.05, rotateY: 5 }}
+                        className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/10
+                                 hover:bg-white/20 transition-all duration-300 hover:border-white/30"
                       >
-                        <h3 className="text-2xl font-bold text-primary-100">
+                        <motion.h3 
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: 2.2, type: "spring", stiffness: 200, damping: 10 }}
+                          className="text-2xl font-bold text-primary-100"
+                        >
                           24/7
-                        </h3>
+                        </motion.h3>
                         <p className="text-white/80">Support</p>
                       </motion.div>
-                    </div>
+                    </motion.div>
                   </motion.div>
 
                   <motion.div
-                    initial={{ opacity: 0, x: 50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.8 }}
+                    variants={fadeInRightVariants}
+                    initial="initial"
+                    animate="animate"
+                    transition={{ delay: 0.6 }}
                     className="hidden lg:block"
                   >
                     <div className="relative">
-                      <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/20 to-secondary-500/20 rounded-xl blur-xl" />
-                      <img
+                      <motion.div 
+                        className="absolute -inset-4 bg-gradient-to-r from-primary-500/20 to-secondary-500/20 rounded-xl blur-xl"
+                        animate={{ 
+                          opacity: [0.3, 0.8, 0.3],
+                          scale: [1, 1.05, 1]
+                        }}
+                        transition={{ 
+                          duration: 4, 
+                          repeat: Infinity, 
+                          ease: "easeInOut" 
+                        }}
+                      />
+                      <motion.img
                         src="https://images.unsplash.com/photo-1416339684178-3a239570f315"
                         alt="Supply Chain Analytics"
-                        className="relative rounded-xl shadow-2xl transform hover:scale-105 transition-transform duration-500"
+                        className="relative rounded-xl shadow-2xl"
+                        whileHover={{ 
+                          scale: 1.05, 
+                          rotateY: 5,
+                          rotateX: 2
+                        }}
+                        transition={{ 
+                          type: "spring", 
+                          stiffness: 200, 
+                          damping: 15 
+                        }}
                       />
                     </div>
                   </motion.div>
@@ -325,54 +421,91 @@ profitable for all`;
         </section>
 
         {/* Why Choose Us Section */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-50 via-white to-secondary-50">
+        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-50 via-white to-secondary-50 overflow-hidden">
           <div className="max-w-7xl mx-auto">
             <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
+              variants={fadeInUpVariants}
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true, margin: "-100px" }}
               className="text-center mb-12"
             >
-              <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-secondary-600">
+              <motion.h2 
+                variants={textRevealVariants}
+                className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-secondary-600"
+              >
                 Why Choose Us
-              </h2>
+              </motion.h2>
               <div className="flex items-center justify-center gap-2 mt-4">
-                <div className="h-1 w-12 rounded-full bg-secondary-400"></div>
-                <div className="h-1 w-24 rounded-full bg-primary-400"></div>
-                <div className="h-1 w-12 rounded-full bg-secondary-400"></div>
+                <motion.div 
+                  variants={lineGrowVariants}
+                  className="h-1 w-12 rounded-full bg-secondary-400"
+                />
+                <motion.div 
+                  variants={lineGrowVariants}
+                  transition={{ delay: 0.2 }}
+                  className="h-1 w-24 rounded-full bg-primary-400"
+                />
+                <motion.div 
+                  variants={lineGrowVariants}
+                  transition={{ delay: 0.4 }}
+                  className="h-1 w-12 rounded-full bg-secondary-400"
+                />
               </div>
             </motion.div>
 
             <motion.div
-              variants={staggerChildren}
+              variants={staggerContainerVariants}
               initial="initial"
               whileInView="animate"
-              viewport={{ once: true }}
+              viewport={{ once: true, margin: "-50px" }}
               className="grid md:grid-cols-3 gap-8"
             >
               {whyChooseUsSection.map((item, index) => (
                 <motion.div
                   key={index}
-                  variants={fadeInUp}
-                  whileHover={{ scale: 1.05 }}
+                  variants={staggerItemVariants}
+                  whileHover={{ 
+                    scale: 1.05, 
+                    rotateY: 5,
+                    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)"
+                  }}
                   className="bg-white p-8 rounded-xl shadow-lg 
                border-b-4 border-primary-500 hover:border-secondary-500
                hover:shadow-2xl transition-all duration-300 transform
-               bg-gradient-to-br from-white to-primary-50/30"
+               bg-gradient-to-br from-white to-primary-50/30 group"
                 >
-                  <div
+                  <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    whileInView={{ scale: 1, rotate: 0 }}
+                    transition={{ 
+                      delay: index * 0.2 + 0.5, 
+                      type: "spring", 
+                      stiffness: 200, 
+                      damping: 10 
+                    }}
                     className="text-5xl mb-6 bg-gradient-to-r from-primary-500 to-secondary-500 
-                    bg-clip-text text-transparent"
+                    bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300"
                   >
                     {item.icon}
-                  </div>
-                  <h3
+                  </motion.div>
+                  <motion.h3
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.2 + 0.7 }}
                     className="text-xl font-semibold mb-3 bg-gradient-to-r from-primary-700 to-secondary-700 
                     bg-clip-text text-transparent"
                   >
                     {item.title}
-                  </h3>
-                  <p className="text-gray-600">{item.description}</p>
+                  </motion.h3>
+                  <motion.p 
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    transition={{ delay: index * 0.2 + 0.9 }}
+                    className="text-gray-600"
+                  >
+                    {item.description}
+                  </motion.p>
                 </motion.div>
               ))}
             </motion.div>
